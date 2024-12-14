@@ -1,5 +1,6 @@
 package me.artemiyulyanov.uptodate.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,6 +30,10 @@ public class ArticleTopic {
 
     @Getter
     @Setter
+<<<<<<< HEAD
+=======
+    @JsonIgnore
+>>>>>>> dev
     @ManyToMany(mappedBy = "topics")
     private Set<Article> articles = new HashSet<>();
 }
