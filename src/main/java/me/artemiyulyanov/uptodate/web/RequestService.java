@@ -10,9 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Map;
 
 @Service
@@ -35,25 +32,23 @@ public class RequestService {
         }
     }
 
-    public ResponseEntity<ServerResponse> executeError(HttpStatus status, int code, String error) {
+    public ResponseEntity<ServerResponse> executeError(HttpStatus status, int code, String description) {
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(ErrorResponse
+                .body(ServerResponse
                         .builder()
                         .code(code)
-                        .error(error)
+                        .response(Map.of("error", description))
                         .build()
                 );
     }
 
-    @Deprecated
-    public ResponseEntity<ServerResponse> executeCustomTemplate(HttpStatus status, int code, String message, Map<String, Object> template) {
+    public ResponseEntity<ServerResponse> executeCustomTemplate(HttpStatus status, int code, Map<String, Object> template) {
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(CustomResponse
+                .body(ServerResponse
                         .builder()
                         .code(code)
-                        .message(message)
                         .response(template)
                         .build()
                 );
@@ -86,33 +81,59 @@ public class RequestService {
                 );
     }
 
-    public ResponseEntity<ServerResponse> executeMessage(HttpStatus status, int code, String message) {
-        return ResponseEntity.status(status)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(MessageResponse
-                        .builder()
-                        .code(code)
-                        .message(message)
-                        .build()
-                );
-    }
-
-    public ResponseEntity<ServerResponse> executeTemplate(HttpStatus status, int code, String message, Map<String, Object> response) {
+    public ResponseEntity<ServerResponse> executeMessage(HttpStatus status, int code, String description) {
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(ServerResponse
                         .builder()
                         .code(code)
-                        .message(message)
-                        .response(response)
+                        .response(Map.of("message", description))
                         .build()
                 );
     }
 
-    public ResponseEntity<byte[]> executeImage(HttpStatus status, MediaType mediaType, byte[] image) {
-        return ResponseEntity.status(status)
-                .contentType(mediaType)
-                .contentLength(image.length)
-                .body(image);
-    }
+//    public ResponseEntity executeRedirection(String location) {
+//        return ResponseEntity.status(HttpStatus.FOUND)
+//                .header("Location", location)
+//                .build();
+//    }
+
+//    public <E> E applyExemptionRequirements(E entity) {
+//        try {
+//            Field[] fields = entity.getClass().getDeclaredFields();
+//
+//            for (Field field : fields) {
+//                field.setAccessible(true);
+//
+//                if (field.isAnnotationPresent(ExemptInRequest.class)) {
+//                    ExemptInRequest annotation = field.getAnnotation(ExemptInRequest.class);
+//                    if (annotation.type() == ExemptInRequest.ExemptionType.FIELD) {
+//                        String fieldName = field.getName();
+//                        Method exemptMethod = entity.getClass().getMethod("set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1), field.getType());
+//                        exemptMethod.invoke(entity, (Object) null);
+//                    }
+//
+//                    if (annotation.type() == ExemptInRequest.ExemptionType.CLASS) {
+//                        Object entityToExemptValues = field.get(entity);
+//
+//                        for (String targetedFieldName : annotation.targetedFields()) {
+//                            Field targetedField = entityToExemptValues.getClass().getDeclaredField(targetedFieldName);
+//                            Method exemptMethod = entityToExemptValues.getClass().getMethod("set" + targetedFieldName.substring(0, 1).toUpperCase() + targetedFieldName.substring(1), targetedField.getType());
+//                            exemptMethod.invoke(entityToExemptValues, (Object) null);
+//                        }
+//
+//                        Method setExemptedTarget = entity.getClass().getMethod("set" + field.getName().substring(0, 1).toUpperCase() + field.getName().substring(1), entityToExemptValues.getClass());
+//                        setExemptedTarget.invoke(entity, entityToExemptValues);
+//                    }
+//                }
+//
+//                field.setAccessible(false);
+//            }
+//
+//            return entity;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return entity;
+//        }
+//    }
 }

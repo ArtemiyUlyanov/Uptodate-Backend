@@ -4,8 +4,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import me.artemiyulyanov.uptodate.jwt.exemptions.JWTExemptionConfig;
-import me.artemiyulyanov.uptodate.jwt.exemptions.JWTExemptionManager;
 import me.artemiyulyanov.uptodate.mail.EmailVerificationCode;
 import me.artemiyulyanov.uptodate.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,16 +14,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
+
 
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
     public static final String ERROR_TEMPLATE = "{\"error\": \"%s\"}";
 
     @Autowired
     private JWTUtil jwtUtil;
-
-    @Autowired
-    private JWTExemptionManager jwtExemptionManager;
 
     @Autowired
     private JWTTokenService jwtTokenService;
@@ -35,7 +30,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if (jwtExemptionManager.isRequestExempt(request)) {
+        if (request.getRequestURI().startsWith("/auth") && !request.getRequestURI().endsWith("/logout")) {
             filterChain.doFilter(request, response);
             return;
         }
