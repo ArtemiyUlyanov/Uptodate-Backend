@@ -82,7 +82,7 @@ public class MinioService {
     }
 
     public void deleteArticleCommentResources(ArticleComment comment) {
-        String resourcesFolder = String.format(ARTICLE_RESOURCES_FOLDER, comment.getAuthor().getId(), comment.getId());
+        String resourcesFolder = String.format(ARTICLE_COMMENT_RESOURCES_FOLDER, comment.getAuthor().getId(), comment.getId());
         if(amazonS3.doesObjectExist(bucket, resourcesFolder)) removeFile(resourcesFolder);
     }
 }
