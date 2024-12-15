@@ -2,6 +2,7 @@ package me.artemiyulyanov.uptodate.services;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
+import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.models.Role;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.repositories.UserRepository;
@@ -15,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -30,6 +32,9 @@ public class UserService implements UserDetailsService {
 
     @Autowired
     private RoleService roleService;
+
+    @Autowired
+    private MinioService minioService;
 
     @Autowired
     @Lazy
@@ -85,6 +90,20 @@ public class UserService implements UserDetailsService {
 
         userRepository.save(user);
         return user;
+    }
+
+    public void save(User user) {
+        userRepository.save(user);
+    }
+
+    public void updateIcon(User user, MultipartFile icon) {
+        if (icon != null) {
+            minioService.deleteUserIcon(user);
+            minioService.saveUserIcon(user, icon);
+        }
+
+        user.setIcon(icon.getOriginalFilename());
+        userRepository.save(user);
     }
 
     public boolean existsByUsername(String username) {

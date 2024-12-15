@@ -87,12 +87,15 @@ public class ArticleService {
         articleRepository.delete(article);
     }
 
-    public void save(Article article, List<MultipartFile> resources) {
+    public void save(Article article) {
+        articleRepository.save(article);
+    }
+
+    public void loadResources(Article article, List<MultipartFile> resources) {
         if (resources != null) {
+            minioService.deleteArticleResources(article);
             minioService.saveArticleResources(article, resources);
         }
-
-        articleRepository.save(article);
     }
 
     @Deprecated

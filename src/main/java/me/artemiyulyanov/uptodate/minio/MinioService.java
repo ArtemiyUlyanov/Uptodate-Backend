@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.*;
 import jakarta.annotation.PostConstruct;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.ArticleComment;
+import me.artemiyulyanov.uptodate.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.List;
 public class MinioService {
     public static final String ARTICLE_RESOURCES_FOLDER = "/articles/%d";
     public static final String ARTICLE_COMMENT_RESOURCES_FOLDER = "/articles/%d/comments/%d";
+    public static final String USER_RESOURCES_FOLDER = "/users/%d";
 
     @Autowired
     private AmazonS3 amazonS3;
@@ -55,7 +57,7 @@ public class MinioService {
     }
 
     public void removeFile(String objectKey) {
-        if(amazonS3.doesObjectExist(bucket, objectKey)) amazonS3.deleteObject(new DeleteObjectRequest(bucket, objectKey));
+        if (amazonS3.doesObjectExist(bucket, objectKey)) amazonS3.deleteObject(new DeleteObjectRequest(bucket, objectKey));
     }
 
     public MinioMediaFile getFile(String objectKey) {
@@ -76,13 +78,23 @@ public class MinioService {
         resources.forEach(file -> uploadFile(String.format(ARTICLE_COMMENT_RESOURCES_FOLDER, comment.getArticle().getId(), comment.getId()) + File.separator + file.getOriginalFilename(), file));
     }
 
+    public void saveUserIcon(User user, MultipartFile iconFile) {
+        String objectKey = String.format(USER_RESOURCES_FOLDER, user.getId()) + File.separator + iconFile.getOriginalFilename();
+        uploadFile(objectKey, iconFile);
+    }
+
     public void deleteArticleResources(Article article) {
         String resourcesFolder = String.format(ARTICLE_RESOURCES_FOLDER, article.getId());
-        if(amazonS3.doesObjectExist(bucket, resourcesFolder)) removeFile(resourcesFolder);
+        if (amazonS3.doesObjectExist(bucket, resourcesFolder)) removeFile(resourcesFolder);
     }
 
     public void deleteArticleCommentResources(ArticleComment comment) {
         String resourcesFolder = String.format(ARTICLE_COMMENT_RESOURCES_FOLDER, comment.getAuthor().getId(), comment.getId());
-        if(amazonS3.doesObjectExist(bucket, resourcesFolder)) removeFile(resourcesFolder);
+        if (amazonS3.doesObjectExist(bucket, resourcesFolder)) removeFile(resourcesFolder);
+    }
+
+    public void deleteUserIcon(User user) {
+        String objectKey = String.format(USER_RESOURCES_FOLDER, user.getId()) + File.separator + user.getIcon();
+        if (amazonS3.doesObjectExist(bucket, objectKey)) removeFile(objectKey);
     }
 }

@@ -99,7 +99,9 @@ public class ArticleController extends AuthenticatedController {
         article.setCreatedAt(LocalDateTime.now());
         article.setAuthor(wrappedUser.get());
 
-        articleService.save(article, resources);
+        articleService.save(article);
+        if (resources != null) articleService.loadResources(article, resources);
+
         return requestService.executeMessage(HttpStatus.OK, 200, "The article has been created!");
     }
 
@@ -135,7 +137,9 @@ public class ArticleController extends AuthenticatedController {
             }
         });
 
-        articleService.save(newArticle, newFiles);
+        articleService.save(newArticle);
+        if (newFiles != null) articleService.loadResources(newArticle, newFiles);
+
         return requestService.executeMessage(HttpStatus.OK, 200, "The changes have been applied successfully!");
     }
 
