@@ -84,7 +84,7 @@ public class AuthController extends AuthenticatedController {
                         .value(registerRequest)
                         .build()
         ));
-        return requestService.executeEntity(HttpStatus.OK, 200, emailVerificationCode);
+        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", emailVerificationCode);
     }
 
     @PostMapping("/register/verify-code")

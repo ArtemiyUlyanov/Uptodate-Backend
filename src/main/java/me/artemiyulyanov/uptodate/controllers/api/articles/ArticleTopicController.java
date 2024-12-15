@@ -34,15 +34,15 @@ public class ArticleTopicController {
         Optional<ArticleTopic> articleTopic = articleTopicService.findById(id);
 
         if (!articleTopic.isPresent()) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "Article topic is not found!");
+            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "Article topic is undefined!");
         }
 
-        return requestService.executeEntity(HttpStatus.OK, 200, articleTopic.get());
+        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", articleTopic.get());
     }
 
     @GetMapping(value = "/get", params = {"parent"})
     public ResponseEntity<ServerResponse> getArticleTopicsByParent(@RequestParam String parent, Model model) {
         List<ArticleTopic> articleTopics = articleTopicService.findByParent(parent);
-        return requestService.executeEntity(HttpStatus.OK, 200, articleTopics);
+        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", articleTopics);
     }
 }

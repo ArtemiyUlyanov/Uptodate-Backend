@@ -23,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
@@ -56,13 +57,13 @@ public class ArticleController extends AuthenticatedController {
         @ApiResponse(responseCode = "20", description = "Article is undefined")
     })
     public ResponseEntity<ServerResponse> getArticleById(@Parameter(description = "An ID of article to find a matching article", required = true) @RequestParam Long id, Model model) {
-        Optional<Article> wrappedArticle = articleService.findArticleById(id);
+        Optional<Article> wrappedArticle = articleService.findById(id);
 
         if (!wrappedArticle.isPresent()) {
             return requestService.executeError(HttpStatus.BAD_REQUEST, 20, "Article is undefined!");
         }
 
-        return requestService.executeEntity(HttpStatus.OK, 200, wrappedArticle.get());
+        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", wrappedArticle.get());
     }
 
     @GetMapping(value = "/search", params = {"authorId"})
@@ -74,7 +75,7 @@ public class ArticleController extends AuthenticatedController {
         }
 
         List<Article> articles = articleService.findByAuthor(wrappedAuthor.get());
-        return requestService.executeEntity(HttpStatus.OK, 200, articles);
+        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", articles);
     }
 
     @GetMapping("/search")
@@ -88,7 +89,7 @@ public class ArticleController extends AuthenticatedController {
             @ApiResponse(responseCode = "200", description = "The request has been proceeded successfully"),
             @ApiResponse(responseCode = "10", description = "The authorized user is undefined")
     })
-    public ResponseEntity<ServerResponse> createArticle(@Schema(implementation = Article.class, description = "An article to be saved") @RequestBody Article article, Model model) {
+    public ResponseEntity<ServerResponse> createArticle(@Schema(implementation = Article.class, description = "An article to be saved") @RequestBody Article article, @RequestParam(value = "resources", required = false) List<MultipartFile> resources, Model model) {
         Optional<User> wrappedUser = getAuthorizedUser();
 
         if (!isUserAuthorized()) {
@@ -98,7 +99,7 @@ public class ArticleController extends AuthenticatedController {
         article.setCreatedAt(LocalDateTime.now());
         article.setAuthor(wrappedUser.get());
 
-        articleService.save(article);
+        articleService.save(article, resources);
         return requestService.executeMessage(HttpStatus.OK, 200, "The article has been created!");
     }
 
@@ -109,9 +110,9 @@ public class ArticleController extends AuthenticatedController {
             @ApiResponse(responseCode = "11", description = "The authorized user has no authority to apply changes"),
             @ApiResponse(responseCode = "20", description = "Article user is undefined")
     })
-    public ResponseEntity<ServerResponse> editArticle(@Parameter(description = "An ID of article to apply changes", required = true) @RequestParam Long id, @Schema(implementation = Article.class, description = "The changed article data to put in") @RequestBody Map<String, Object> updates, Model model) {
+    public ResponseEntity<ServerResponse> editArticle(@Parameter(description = "An ID of article to apply changes", required = true) @RequestParam Long id, @Schema(implementation = Article.class, description = "The changed article data to put in") @RequestBody Map<String, Object> updates, @RequestParam(value = "newFiles", required = false) List<MultipartFile> newFiles, Model model) {
         Optional<User> wrappedUser = getAuthorizedUser();
-        Optional<Article> wrappedArticle = articleService.findArticleById(id);
+        Optional<Article> wrappedArticle = articleService.findById(id);
 
         if (!isUserAuthorized()) {
             return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
@@ -134,7 +135,7 @@ public class ArticleController extends AuthenticatedController {
             }
         });
 
-        articleService.save(newArticle);
+        articleService.save(newArticle, newFiles);
         return requestService.executeMessage(HttpStatus.OK, 200, "The changes have been applied successfully!");
     }
 
@@ -147,7 +148,7 @@ public class ArticleController extends AuthenticatedController {
     })
     public ResponseEntity<ServerResponse> deleteArticle(@Parameter(description = "An ID of article to delete", required = true) @RequestParam Long id, Model model) {
         Optional<User> wrappedUser = getAuthorizedUser();
-        Optional<Article> wrappedArticle = articleService.findArticleById(id);
+        Optional<Article> wrappedArticle = articleService.findById(id);
 
         if (!isUserAuthorized()) {
             return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");

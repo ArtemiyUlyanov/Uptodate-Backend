@@ -59,12 +59,13 @@ public class RequestService {
                 );
     }
 
-    public ResponseEntity<ServerResponse> executeEntity(HttpStatus status, int code, Object entity) {
+    public ResponseEntity<ServerResponse> executeEntity(HttpStatus status, int code, String message, Object entity) {
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(ServerResponse
                         .builder()
                         .code(code)
+                        .message(message)
                         .response(entity)
                         .build()
                 );

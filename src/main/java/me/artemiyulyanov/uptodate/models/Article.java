@@ -2,8 +2,10 @@ package me.artemiyulyanov.uptodate.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import me.artemiyulyanov.uptodate.models.text.ArticleTextFragment;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -13,32 +15,22 @@ import java.util.Set;
 
 @Entity
 @Table(name = "articles")
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class Article {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Getter
-    @Setter
     private Long id;
 
-    @Getter
-    @Setter
-    private String heading;
-
-    @Getter
-    @Setter
-    private String content;
+    private String heading, content;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Getter
-    @Setter
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Getter
-    @Setter
     private List<ArticleComment> comments = new ArrayList<>();
 
     @ManyToMany
@@ -47,14 +39,10 @@ public class Article {
             joinColumns = @JoinColumn(name = "article_id"),
             inverseJoinColumns = @JoinColumn(name = "topic_id")
     )
-    @Getter
-    @Setter
     private Set<ArticleTopic> topics = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
-    @Getter
-    @Setter
+    @JsonIgnoreProperties({"articles", "comments"})
     private User author;
 }

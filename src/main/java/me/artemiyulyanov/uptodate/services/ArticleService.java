@@ -1,9 +1,12 @@
 package me.artemiyulyanov.uptodate.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.ArticleTopic;
 import me.artemiyulyanov.uptodate.models.User;
+import me.artemiyulyanov.uptodate.models.text.ArticleTextFragment;
 import me.artemiyulyanov.uptodate.repositories.ArticleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -12,12 +15,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class ArticleService {
@@ -32,6 +35,12 @@ public class ArticleService {
     @Lazy
     private ArticleTopicService articleTopicService;
 
+    @Autowired
+    private MinioService minioService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @PostConstruct
     @Lazy
     public void init() {
@@ -41,15 +50,16 @@ public class ArticleService {
         ArticleTopic topic2 = articleTopicService.findByName("Luxury Travel").get();
 
         User author = userService.findByUsername("Artemiy").get();
-        Article article = Article.builder()
-                .author(author)
-                .heading("The heading of the article")
-                .content("The content of the article")
-                .topics(Set.of(topic1, topic2))
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        articleRepository.save(article);
+        for (int i = 1; i <= 50; i++) {
+            Article article = Article.builder()
+                    .author(author)
+                    .heading("The heading of the article #" + i)
+                    .content("The content of the article #" + i)
+                    .topics(Set.of(topic1, topic2))
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            articleRepository.save(article);
+        }
     }
 
     public List<Article> findAllArticles(Sort sort) {
@@ -60,7 +70,7 @@ public class ArticleService {
         return articleRepository.findAll(pageable);
     }
 
-    public Optional<Article> findArticleById(Long id) {
+    public Optional<Article> findById(Long id) {
         return articleRepository.findById(id);
     }
 
@@ -73,10 +83,32 @@ public class ArticleService {
     }
 
     public void delete(Article article) {
+        minioService.deleteArticleResources(article);
         articleRepository.delete(article);
     }
 
-    public void save(Article article) {
+    public void save(Article article, List<MultipartFile> resources) {
+        if (resources != null) {
+            minioService.saveArticleResources(article, resources);
+        }
+
         articleRepository.save(article);
+    }
+
+    @Deprecated
+    public void update(Article article, List<MultipartFile> resources) {
+        if (resources != null) {
+            minioService.saveArticleResources(article, resources);
+        }
+
+        articleRepository.save(article);
+    }
+
+    public List<ArticleTextFragment> getArticleTextFragments(Article article) {
+        try {
+            return objectMapper.readValue(article.getContent(), objectMapper.getTypeFactory().constructCollectionType(List.class, ArticleTextFragment.class));
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
     }
 }

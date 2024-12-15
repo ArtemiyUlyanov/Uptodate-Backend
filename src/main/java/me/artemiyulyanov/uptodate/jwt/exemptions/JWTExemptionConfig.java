@@ -9,7 +9,6 @@ public class JWTExemptionConfig {
     public JWTExemptionManager jwtExemptionManager() {
         return new JWTExemptionManager()
                 .exempt(request -> request.getRequestURI().startsWith("/auth") &&
-                                   !request.getRequestURI().endsWith("/logout"))
-                .exempt(request -> request.getRequestURI().startsWith("/api/files"));
+                                   !request.getRequestURI().endsWith("/logout"));
     }
 }
