@@ -1,16 +1,12 @@
-# UPTODATE v0.2.2 (dev)
+# UPTODATE v0.3 (dev)
 
 ## New amendments and features
 
 1. The REST API has been enhanced by enforcing some of new API endpoints:
-   - /api/articles/search
-   - /api/articles/delete
-   - /api/articles/edit
-   - /api/articles/create
-   - /auth/register
-   - /auth/register/verify-code
-2. The registration system including confirming a prospective user by email verification code has been implemented
-3. The authentication system has been significantly boosted and maintained
+   - /api/articles/comments/get
+   - /api/articles/comments/delete
+   - /api/articles/comments/create
+2. A storaging server has been applied to a project and bound with the Amazon S3 API
 
 ## Execution
 
