@@ -2,6 +2,7 @@ package me.artemiyulyanov.uptodate.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.artemiyulyanov.uptodate.minio.MinioService;
+import me.artemiyulyanov.uptodate.minio.resources.ArticleCommentResourceManager;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.ArticleComment;
 import me.artemiyulyanov.uptodate.models.User;
@@ -15,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class ArticleCommentService {
+public class ArticleCommentService implements ResourceService<ArticleCommentResourceManager> {
     @Autowired
     private ArticleCommentRepository articleCommentRepository;
 
@@ -45,7 +46,7 @@ public class ArticleCommentService {
     }
 
     public void delete(ArticleComment comment) {
-        minioService.deleteArticleCommentResources(comment);
+        getResourceManager().deleteResources(comment);
         articleCommentRepository.delete(comment);
     }
 
@@ -53,19 +54,27 @@ public class ArticleCommentService {
         articleCommentRepository.save(comment);
     }
 
-    public void loadResources(ArticleComment comment, List<MultipartFile> resources) {
-        if (resources != null) {
-            minioService.deleteArticleCommentResources(comment);
-            minioService.saveArticleCommentResources(comment, resources);
-        }
+    @Override
+    public ArticleCommentResourceManager getResourceManager() {
+        return ArticleCommentResourceManager
+                .builder()
+                .minioService(minioService)
+                .build();
     }
 
-    @Deprecated
-    public void update(ArticleComment comment, List<MultipartFile> resources) {
-        if (resources != null) {
-            minioService.saveArticleCommentResources(comment, resources);
-        }
-
-        articleCommentRepository.save(comment);
-    }
+//    public void loadResources(ArticleComment comment, List<MultipartFile> resources) {
+//        if (resources != null) {
+//            minioService.deleteArticleCommentResources(comment);
+//            minioService.saveArticleCommentResources(comment, resources);
+//        }
+//    }
+//
+//    @Deprecated
+//    public void update(ArticleComment comment, List<MultipartFile> resources) {
+//        if (resources != null) {
+//            minioService.saveArticleCommentResources(comment, resources);
+//        }
+//
+//        articleCommentRepository.save(comment);
+//    }
 }

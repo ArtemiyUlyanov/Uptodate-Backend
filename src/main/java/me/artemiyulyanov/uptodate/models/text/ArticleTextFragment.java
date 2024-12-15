@@ -8,7 +8,11 @@ import org.springframework.stereotype.Component;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Component
 public class ArticleTextFragment {
-    private String text, type;
+    private String text;
+    private ArticleTextFragmentType type;
+
+    public enum ArticleTextFragmentType {
+        DEFAULT, BOLD, CURSIVE, IMAGE;
+    }
 }

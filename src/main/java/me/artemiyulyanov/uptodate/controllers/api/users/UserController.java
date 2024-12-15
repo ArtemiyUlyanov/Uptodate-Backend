@@ -54,7 +54,7 @@ public class UserController extends AuthenticatedController {
         }
 
         User newUser = wrappedUser.get();
-        if (icon != null) userService.updateIcon(newUser, icon);
+        if (icon != null) userService.getResourceManager().updateResources(newUser, List.of(icon));
 
         updates.forEach((key, value) -> {
             Field field = ReflectionUtils.findField(Article.class, key);

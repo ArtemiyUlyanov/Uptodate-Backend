@@ -89,7 +89,9 @@ public class ArticleCommentController extends AuthenticatedController {
         comment.setAuthor(wrappedUser.get());
 
         articleCommentService.save(comment);
-        if (resources != null) articleCommentService.loadResources(comment, resources);
+        if (resources != null) {
+            articleCommentService.getResourceManager().uploadResources(comment, resources);
+        }
 
         return requestService.executeMessage(HttpStatus.OK, 200, "The article has been created!");
     }
@@ -121,7 +123,9 @@ public class ArticleCommentController extends AuthenticatedController {
         });
 
         articleCommentService.save(newArticleComment);
-        if (newFiles != null) articleCommentService.loadResources(newArticleComment, newFiles);
+        if (newFiles != null) {
+            articleCommentService.getResourceManager().uploadResources(newArticleComment, newFiles);
+        }
 
         return requestService.executeMessage(HttpStatus.OK, 200, "The changes have been applied successfully!");
     }

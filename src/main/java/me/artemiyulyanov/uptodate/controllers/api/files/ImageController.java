@@ -33,7 +33,7 @@ public class ImageController extends AuthenticatedController {
             return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
         }
 
-        MinioMediaFile mediaFile = minioService.getFile(path);
+        MinioMediaFile mediaFile = minioService.getMediaFile(path);
 
         try (InputStream inputStream = mediaFile.getInputStream()) {
             return requestService.executeImage(HttpStatus.OK, mediaFile.getMediaType(), inputStream.readAllBytes());
