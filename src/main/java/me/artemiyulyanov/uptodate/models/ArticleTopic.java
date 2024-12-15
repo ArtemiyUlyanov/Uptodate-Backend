@@ -30,10 +30,7 @@ public class ArticleTopic {
 
     @Getter
     @Setter
-<<<<<<< HEAD
-=======
     @JsonIgnore
->>>>>>> dev
     @ManyToMany(mappedBy = "topics")
     private Set<Article> articles = new HashSet<>();
 }

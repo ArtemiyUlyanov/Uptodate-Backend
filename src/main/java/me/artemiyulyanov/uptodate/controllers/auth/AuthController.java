@@ -63,7 +63,7 @@ public class AuthController extends AuthenticatedController {
         }
 
         String token = jwtUtil.generateToken(username);
-        return requestService.executeCustomTemplate(HttpStatus.OK, 200, Map.of("jwt_token", token));
+        return requestService.executeTemplate(HttpStatus.OK, 200, "The authorization has been performed successfully!", Map.of("jwt_token", token));
     }
 
     @PostMapping("/register")
@@ -111,7 +111,7 @@ public class AuthController extends AuthenticatedController {
         userService.createNewUser(user);
 
         String token = jwtUtil.generateToken(user.getUsername());
-        return requestService.executeCustomTemplate(HttpStatus.OK, 200, Map.of("jwt_token", token));
+        return requestService.executeTemplate(HttpStatus.OK, 200, "The registration has been performed successfully!", Map.of("jwt_token", token));
     }
 
     @PostMapping("/logout")
