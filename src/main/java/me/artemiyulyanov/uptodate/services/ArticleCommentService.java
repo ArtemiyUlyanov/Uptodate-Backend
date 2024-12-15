@@ -49,12 +49,15 @@ public class ArticleCommentService {
         articleCommentRepository.delete(comment);
     }
 
-    public void save(ArticleComment comment, List<MultipartFile> resources) {
+    public void save(ArticleComment comment) {
+        articleCommentRepository.save(comment);
+    }
+
+    public void loadResources(ArticleComment comment, List<MultipartFile> resources) {
         if (resources != null) {
+            minioService.deleteArticleCommentResources(comment);
             minioService.saveArticleCommentResources(comment, resources);
         }
-
-        articleCommentRepository.save(comment);
     }
 
     @Deprecated

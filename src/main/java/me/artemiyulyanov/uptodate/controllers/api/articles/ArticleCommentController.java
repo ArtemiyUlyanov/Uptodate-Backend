@@ -88,7 +88,9 @@ public class ArticleCommentController extends AuthenticatedController {
         comment.setCreatedAt(LocalDateTime.now());
         comment.setAuthor(wrappedUser.get());
 
-        articleCommentService.save(comment, resources);
+        articleCommentService.save(comment);
+        if (resources != null) articleCommentService.loadResources(comment, resources);
+
         return requestService.executeMessage(HttpStatus.OK, 200, "The article has been created!");
     }
 
@@ -118,7 +120,9 @@ public class ArticleCommentController extends AuthenticatedController {
             }
         });
 
-        articleCommentService.save(newArticleComment, newFiles);
+        articleCommentService.save(newArticleComment);
+        if (newFiles != null) articleCommentService.loadResources(newArticleComment, newFiles);
+
         return requestService.executeMessage(HttpStatus.OK, 200, "The changes have been applied successfully!");
     }
 
