@@ -3,6 +3,8 @@ package me.artemiyulyanov.uptodate.services;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import me.artemiyulyanov.uptodate.minio.MinioService;
+import me.artemiyulyanov.uptodate.minio.resources.ArticleCommentResourceManager;
+import me.artemiyulyanov.uptodate.minio.resources.UserResourceManager;
 import me.artemiyulyanov.uptodate.models.Role;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.repositories.UserRepository;
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @Primary
 @Transactional
-public class UserService implements UserDetailsService {
+public class UserService implements UserDetailsService, ResourceService<UserResourceManager> {
     @Autowired
     private UserRepository userRepository;
 
@@ -96,16 +98,6 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
-    public void updateIcon(User user, MultipartFile icon) {
-        if (icon != null) {
-            minioService.deleteUserIcon(user);
-            minioService.saveUserIcon(user, icon);
-        }
-
-        user.setIcon(icon.getOriginalFilename());
-        userRepository.save(user);
-    }
-
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
     }
@@ -123,5 +115,14 @@ public class UserService implements UserDetailsService {
         if (!user.isPresent()) return false;
 
         return passwordEncoder.matches(password, user.get().getPassword());
+    }
+
+    @Override
+    public UserResourceManager getResourceManager() {
+        return UserResourceManager
+                .builder()
+                .userRepository(userRepository)
+                .minioService(minioService)
+                .build();
     }
 }

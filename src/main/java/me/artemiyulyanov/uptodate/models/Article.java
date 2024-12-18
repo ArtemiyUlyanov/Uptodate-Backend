@@ -3,9 +3,12 @@ package me.artemiyulyanov.uptodate.models;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
+import me.artemiyulyanov.uptodate.models.converters.ArticleTextFragmentConverter;
 import me.artemiyulyanov.uptodate.models.text.ArticleTextFragment;
+import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,7 +28,11 @@ public class Article {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String heading, content;
+    private String heading;
+
+    @Convert(converter = ArticleTextFragmentConverter.class)
+    @Column(columnDefinition = "JSON")
+    private List<ArticleTextFragment> content;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;

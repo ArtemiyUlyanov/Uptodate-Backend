@@ -100,7 +100,10 @@ public class ArticleController extends AuthenticatedController {
         article.setAuthor(wrappedUser.get());
 
         articleService.save(article);
-        if (resources != null) articleService.loadResources(article, resources);
+        if (resources != null) {
+            articleService.getResourceManager().uploadResources(article, resources);
+            articleService.getResourceManager().updateResources(article, resources);
+        }
 
         return requestService.executeMessage(HttpStatus.OK, 200, "The article has been created!");
     }
@@ -138,7 +141,10 @@ public class ArticleController extends AuthenticatedController {
         });
 
         articleService.save(newArticle);
-        if (newFiles != null) articleService.loadResources(newArticle, newFiles);
+        if (newFiles != null) {
+            articleService.getResourceManager().uploadResources(newArticle, newFiles);
+            articleService.getResourceManager().updateResources(newArticle, newFiles);
+        }
 
         return requestService.executeMessage(HttpStatus.OK, 200, "The changes have been applied successfully!");
     }

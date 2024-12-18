@@ -18,10 +18,6 @@ import java.util.List;
 
 @Service
 public class MinioService {
-    public static final String ARTICLE_RESOURCES_FOLDER = "/articles/%d";
-    public static final String ARTICLE_COMMENT_RESOURCES_FOLDER = "/articles/%d/comments/%d";
-    public static final String USER_RESOURCES_FOLDER = "/users/%d";
-
     @Autowired
     private AmazonS3 amazonS3;
 
@@ -56,11 +52,37 @@ public class MinioService {
         }
     }
 
-    public void removeFile(String objectKey) {
+    public boolean fileExists(String objectKey) {
+        return amazonS3.doesObjectExist(bucket, objectKey);
+    }
+
+    public boolean folderExists(String prefix) {
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+                .withBucketName(bucket)
+                .withPrefix(prefix)
+                .withMaxKeys(1);
+
+        ObjectListing objectListing = amazonS3.listObjects(listObjectsRequest);
+        return !objectListing.getObjectSummaries().isEmpty();
+    }
+
+    public void deleteFile(String objectKey) {
         if (amazonS3.doesObjectExist(bucket, objectKey)) amazonS3.deleteObject(new DeleteObjectRequest(bucket, objectKey));
     }
 
-    public MinioMediaFile getFile(String objectKey) {
+    public void deleteFolder(String prefix) {
+        List<DeleteObjectsRequest.KeyVersion> files = getFolder(prefix)
+                .stream()
+                .map(DeleteObjectsRequest.KeyVersion::new)
+                .toList();
+
+        DeleteObjectsRequest deleteRequest = new DeleteObjectsRequest(bucket)
+                .withKeys(files)
+                .withQuiet(true);
+        amazonS3.deleteObjects(deleteRequest);
+    }
+
+    public MinioMediaFile getMediaFile(String objectKey) {
         S3Object s3Object = amazonS3.getObject(new GetObjectRequest(bucket, objectKey));
 
         return MinioMediaFile
@@ -70,31 +92,69 @@ public class MinioService {
                 .build();
     }
 
-    public void saveArticleResources(Article article, List<MultipartFile> resources) {
-        resources.forEach(file -> uploadFile(String.format(ARTICLE_RESOURCES_FOLDER, article.getId()) + File.separator + file.getOriginalFilename(), file));
+    public List<String> getFolder(String prefix) {
+        ListObjectsV2Result result = amazonS3.listObjectsV2(
+                new ListObjectsV2Request()
+                        .withBucketName(bucket)
+                        .withPrefix(prefix)
+        );
+
+        return result.getObjectSummaries()
+                .stream()
+                .map(S3ObjectSummary::getKey)
+                .toList();
     }
 
-    public void saveArticleCommentResources(ArticleComment comment, List<MultipartFile> resources) {
-        resources.forEach(file -> uploadFile(String.format(ARTICLE_COMMENT_RESOURCES_FOLDER, comment.getArticle().getId(), comment.getId()) + File.separator + file.getOriginalFilename(), file));
-    }
+//    public void saveArticleResources(Article article, List<MultipartFile> resources) {
+//        resources.forEach(file -> uploadFile(getFolder(article) + File.separator + file.getOriginalFilename(), file));
+//    }
+//
+//    public void saveArticleCommentResources(ArticleComment comment, List<MultipartFile> resources) {
+//        resources.forEach(file -> uploadFile(getFolder(comment) + File.separator + file.getOriginalFilename(), file));
+//    }
+//
+//    public void saveUserIcon(User user, MultipartFile iconFile) {
+//        String objectKey = getFolder(user) + File.separator + iconFile.getOriginalFilename();
+//        uploadFile(objectKey, iconFile);
+//    }
+//
+//    public void deleteArticleResources(Article article) {
+//        String resourcesFolder = getFolder(article);
+//        System.out.println("The folder " + resourcesFolder + ": " + amazonS3.doesObjectExist(bucket, resourcesFolder));
+//        if (amazonS3.doesObjectExist(bucket, resourcesFolder)) deleteFile(resourcesFolder);
+//    }
+//
+//    public void deleteArticleCommentResources(ArticleComment comment) {
+//        String resourcesFolder = getFolder(comment);
+//        if (amazonS3.doesObjectExist(bucket, resourcesFolder)) deleteFile(resourcesFolder);
+//    }
+//
+//    public void deleteUserIcon(User user) {
+//        String objectKey = getFolder(user) + File.separator + user.getIcon();
+//        if (amazonS3.doesObjectExist(bucket, objectKey)) deleteFile(objectKey);
+//    }
 
-    public void saveUserIcon(User user, MultipartFile iconFile) {
-        String objectKey = String.format(USER_RESOURCES_FOLDER, user.getId()) + File.separator + iconFile.getOriginalFilename();
-        uploadFile(objectKey, iconFile);
-    }
-
-    public void deleteArticleResources(Article article) {
-        String resourcesFolder = String.format(ARTICLE_RESOURCES_FOLDER, article.getId());
-        if (amazonS3.doesObjectExist(bucket, resourcesFolder)) removeFile(resourcesFolder);
-    }
-
-    public void deleteArticleCommentResources(ArticleComment comment) {
-        String resourcesFolder = String.format(ARTICLE_COMMENT_RESOURCES_FOLDER, comment.getAuthor().getId(), comment.getId());
-        if (amazonS3.doesObjectExist(bucket, resourcesFolder)) removeFile(resourcesFolder);
-    }
-
-    public void deleteUserIcon(User user) {
-        String objectKey = String.format(USER_RESOURCES_FOLDER, user.getId()) + File.separator + user.getIcon();
-        if (amazonS3.doesObjectExist(bucket, objectKey)) removeFile(objectKey);
-    }
+//    public List<String> getArticleResources(Article article) {
+//        return getResources(getFolder(article));
+//    }
+//
+//    public List<String> getArticleCommentResources(ArticleComment comment) {
+//        return getResources(getFolder(comment));
+//    }
+//
+//    public List<String> getUserResources(User user) {
+//        return getResources(getFolder(user));
+//    }
+//
+//    private String getFolder(Article article) {
+//        return String.format(ARTICLE_RESOURCES_FOLDER, article.getId());
+//    }
+//
+//    private String getFolder(ArticleComment comment) {
+//        return String.format(ARTICLE_COMMENT_RESOURCES_FOLDER, comment.getArticle().getId(), comment.getId());
+//    }
+//
+//    private String getFolder(User user) {
+//        return String.format(USER_RESOURCES_FOLDER, user.getId());
+//    }
 }

@@ -3,6 +3,8 @@ package me.artemiyulyanov.uptodate.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import me.artemiyulyanov.uptodate.minio.MinioService;
+import me.artemiyulyanov.uptodate.minio.resources.ArticleResourceManager;
+import me.artemiyulyanov.uptodate.minio.resources.UserResourceManager;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.ArticleTopic;
 import me.artemiyulyanov.uptodate.models.User;
@@ -13,17 +15,13 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-public class ArticleService {
+public class ArticleService implements ResourceService<ArticleResourceManager> {
     @Autowired
     private ArticleRepository articleRepository;
 
@@ -44,6 +42,10 @@ public class ArticleService {
     @PostConstruct
     @Lazy
     public void init() {
+//        Article article1 = articleRepository.findById(1L).get();
+//        System.out.println("OOPS I DID IT AGAIN I HAVE PLAYED WITH YOUR HEART GOT LOST IN THIS GAME");
+//        minioService.getArticleResources(article1).forEach(System.out::println);
+
         if (articleRepository.count() > 0) return;
 
         ArticleTopic topic1 = articleTopicService.findByName("Cultural Travel").get();
@@ -54,7 +56,15 @@ public class ArticleService {
             Article article = Article.builder()
                     .author(author)
                     .heading("The heading of the article #" + i)
-                    .content("The content of the article #" + i)
+                    .content(List.of(
+                            ArticleTextFragment
+                                .builder()
+                                .text("The content of the article #" + i)
+                                .type(ArticleTextFragment.ArticleTextFragmentType.DEFAULT)
+                                .build()
+                            )
+                    )
+//                    .content("Test")
                     .topics(Set.of(topic1, topic2))
                     .createdAt(LocalDateTime.now())
                     .build();
@@ -83,7 +93,7 @@ public class ArticleService {
     }
 
     public void delete(Article article) {
-        minioService.deleteArticleResources(article);
+        getResourceManager().deleteResources(article);
         articleRepository.delete(article);
     }
 
@@ -91,27 +101,54 @@ public class ArticleService {
         articleRepository.save(article);
     }
 
-    public void loadResources(Article article, List<MultipartFile> resources) {
-        if (resources != null) {
-            minioService.deleteArticleResources(article);
-            minioService.saveArticleResources(article, resources);
-        }
+    @Override
+    public ArticleResourceManager getResourceManager() {
+        return ArticleResourceManager
+                .builder()
+                .minioService(minioService)
+                .build();
     }
 
-    @Deprecated
-    public void update(Article article, List<MultipartFile> resources) {
-        if (resources != null) {
-            minioService.saveArticleResources(article, resources);
-        }
+//    @Override
+//    public void uploadResources(Article article, List<MultipartFile> resources) {
+//        if (resources != null) {
+//            minioService.saveArticleResources(article, resources);
+//        }
+//    }
+//
+//    @Override
+//    public void updateResources(Article article) {
+//        List<String> images = article.getContent()
+//                .stream()
+//                .filter(fragment -> fragment.getType() == ArticleTextFragment.ArticleTextFragmentType.IMAGE)
+//                .map(ArticleTextFragment::getText)
+//                .toList();
+//
+//        List<String> resources = minioService.getArticleResources(article);
+//        resources.stream()
+//                .filter(resource -> !images.contains(resource))
+//                .forEach(resource -> minioService.removeFile(resource));
+//    }
+//
+//    @Override
+//    public void deleteResources(Article article) {
+//        if (minioService.fileExists(getResourceFolder(article))) minioService.deleteFolder(getResourceFolder(article));
+//    }
 
-        articleRepository.save(article);
-    }
+//    @Deprecated
+//    public void update(Article article, List<MultipartFile> resources) {
+//        if (resources != null) {
+//            minioService.saveArticleResources(article, resources);
+//        }
+//
+//        articleRepository.save(article);
+//    }
 
-    public List<ArticleTextFragment> getArticleTextFragments(Article article) {
-        try {
-            return objectMapper.readValue(article.getContent(), objectMapper.getTypeFactory().constructCollectionType(List.class, ArticleTextFragment.class));
-        } catch (IOException e) {
-            return new ArrayList<>();
-        }
-    }
+    //    public List<ArticleTextFragment> getArticleTextFragments(Article article) {
+//        try {
+//            return objectMapper.readValue(article.getContent(), objectMapper.getTypeFactory().constructCollectionType(List.class, ArticleTextFragment.class));
+//        } catch (IOException e) {
+//            return new ArrayList<>();
+//        }
+//    }
 }
