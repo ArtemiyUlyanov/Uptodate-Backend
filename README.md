@@ -1,5 +1,9 @@
 # UPTODATE v0.3 (dev)
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file or the full text at [MIT License](https://opensource.org/licenses/MIT) for details.
+
 ## New amendments and features
 
 1. The REST API has been enhanced by enforcing some of new API endpoints:
