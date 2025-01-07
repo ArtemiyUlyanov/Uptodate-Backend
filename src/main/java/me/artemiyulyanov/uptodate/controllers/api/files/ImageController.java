@@ -27,12 +27,8 @@ public class ImageController extends AuthenticatedController {
     @Autowired
     private RequestService requestService;
 
-    @GetMapping("/get/{path}")
-    public ResponseEntity getImage(@PathVariable String path, Model model) {
-        if (!isUserAuthorized()) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
-        }
-
+    @GetMapping("/get")
+    public ResponseEntity getImage(@RequestParam String path, Model model) {
         MinioMediaFile mediaFile = minioService.getMediaFile(path);
 
         try (InputStream inputStream = mediaFile.getInputStream()) {

@@ -29,6 +29,12 @@ public class ArticleTopicController {
     @Autowired
     private RequestService requestService;
 
+    @GetMapping(value = "/get", params = {})
+    public ResponseEntity<ServerResponse> getAllArticleTopics(Model model) {
+        List<ArticleTopic> topics = articleTopicService.findAll();
+        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", topics);
+    }
+
     @GetMapping(value = "/get", params = {"id"})
     public ResponseEntity<ServerResponse> getArticleTopicById(@RequestParam Long id, Model model) {
         Optional<ArticleTopic> articleTopic = articleTopicService.findById(id);

@@ -28,7 +28,7 @@ public class Article {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String heading;
+    private String heading, description;
 
     @Convert(converter = ArticleTextFragmentConverter.class)
     @Column(columnDefinition = "JSON")

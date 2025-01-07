@@ -10,11 +10,14 @@ import me.artemiyulyanov.uptodate.models.ArticleTopic;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.models.text.ArticleTextFragment;
 import me.artemiyulyanov.uptodate.repositories.ArticleRepository;
+import me.artemiyulyanov.uptodate.web.PageableObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -42,42 +45,84 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
     @PostConstruct
     @Lazy
     public void init() {
-//        Article article1 = articleRepository.findById(1L).get();
-//        System.out.println("OOPS I DID IT AGAIN I HAVE PLAYED WITH YOUR HEART GOT LOST IN THIS GAME");
-//        minioService.getArticleResources(article1).forEach(System.out::println);
-
         if (articleRepository.count() > 0) return;
 
         ArticleTopic topic1 = articleTopicService.findByName("Cultural Travel").get();
         ArticleTopic topic2 = articleTopicService.findByName("Luxury Travel").get();
 
-        User author = userService.findByUsername("Artemiy").get();
-        for (int i = 1; i <= 50; i++) {
-            Article article = Article.builder()
-                    .author(author)
-                    .heading("The heading of the article #" + i)
-                    .content(List.of(
-                            ArticleTextFragment
-                                .builder()
-                                .text("The content of the article #" + i)
-                                .type(ArticleTextFragment.ArticleTextFragmentType.DEFAULT)
-                                .build()
-                            )
-                    )
-//                    .content("Test")
-                    .topics(Set.of(topic1, topic2))
-                    .createdAt(LocalDateTime.now())
-                    .build();
-            articleRepository.save(article);
-        }
+        ArticleTopic topic3 = articleTopicService.findByName("Blockchain").get();
+        ArticleTopic topic4 = articleTopicService.findByName("Cloud Computing").get();
+
+        ArticleTopic topic5 = articleTopicService.findByName("Fashion & Style").get();
+
+        User author = userService.findByUsername("artemiyulyanov2008").get();
+        Article article1 = Article.builder()
+                .author(author)
+                .heading("No longer unavailable — widely-distributed famous fashion brands appear in Shanghai’s streets")
+                .description("The recent surge of globally renowned fashion brands establishing a strong presence in Shanghai’s retail scene.")
+                .content(List.of(
+                                ArticleTextFragment
+                                        .builder()
+                                        .text("The content of the article #1")
+                                        .type(ArticleTextFragment.ArticleTextFragmentType.DEFAULT)
+                                        .build()
+                        )
+                )
+                .topics(Set.of(topic1, topic2))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Article article2 = Article.builder()
+                .author(author)
+                .heading("Top 10 places to visit in Amsterdam — the last one is the most wondering")
+                .description("The top 10 must-visit locations in Amsterdam, showcasing the city’s iconic canals, historical landmarks, and vibrant cultural spots.")
+                .content(List.of(
+                                ArticleTextFragment
+                                        .builder()
+                                        .text("The content of the article #2")
+                                        .type(ArticleTextFragment.ArticleTextFragmentType.DEFAULT)
+                                        .build()
+                        )
+                )
+                .topics(Set.of(topic3, topic4))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Article article3 = Article.builder()
+                .author(author)
+                .heading("The future is up to you — the programming languages to be demanded in 2024")
+                .description("The programming languages predicted to be in high demand in 2024, as technology continues to evolve at a rapid pace.")
+                .content(List.of(
+                                ArticleTextFragment
+                                        .builder()
+                                        .text("The content of the article #2")
+                                        .type(ArticleTextFragment.ArticleTextFragmentType.DEFAULT)
+                                        .build()
+                        )
+                )
+                .topics(Set.of(topic5))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        articleRepository.save(article1);
+        articleRepository.save(article2);
+        articleRepository.save(article3);
+    }
+
+    public long count() {
+        return articleRepository.count();
     }
 
     public List<Article> findAllArticles(Sort sort) {
         return articleRepository.findAll(sort);
     }
 
-    public Page<Article> findAllArticles(Pageable pageable) {
-        return articleRepository.findAll(pageable);
+    public Page<Article> findAllArticles(PageableObject<Article> pageableObject) {
+        return articleRepository.findAll(pageableObject.getCommonSpecification(), pageableObject.getPageable());
+    }
+
+    public Page<Article> findAllArticles(PageRequest pageRequest) {
+        return articleRepository.findAll(pageRequest);
     }
 
     public Optional<Article> findById(Long id) {

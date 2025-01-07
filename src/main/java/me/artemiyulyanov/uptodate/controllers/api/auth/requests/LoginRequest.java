@@ -1,4 +1,4 @@
-package me.artemiyulyanov.uptodate.controllers.auth.requests;
+package me.artemiyulyanov.uptodate.controllers.api.auth.requests;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,6 +9,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
-    private String username, email, password, firstName, lastName;
+public class LoginRequest {
+    private String username, password;
 }

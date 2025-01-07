@@ -17,10 +17,10 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/swagger-ui", "/v3/api-docs").permitAll()
-                        .requestMatchers("/auth/logout").authenticated()
+                        .requestMatchers("/api/auth/**", "/swagger-ui", "/v3/api-docs", "/api/articles/search", "/api/articles/topics/**", "/api/files/get/**").permitAll()
+                        .requestMatchers("/api/auth/logout").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/executor/**").hasRole("USER")
+                        .requestMatchers("/api/**").hasRole("USER")
                         .anyRequest().permitAll()
                 );
 
