@@ -157,6 +157,10 @@ public class ArticleTopicService {
         articleTopicRepository.saveAll(topics);
     }
 
+    public List<ArticleTopic> findAll() {
+        return articleTopicRepository.findAll();
+    }
+
     public Optional<ArticleTopic> findById(Long id) {
         return articleTopicRepository.findById(id);
     }

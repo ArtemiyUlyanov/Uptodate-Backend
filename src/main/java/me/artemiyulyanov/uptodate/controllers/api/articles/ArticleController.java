@@ -1,5 +1,8 @@
 package me.artemiyulyanov.uptodate.controllers.api.articles;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -7,8 +10,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
+import me.artemiyulyanov.uptodate.controllers.api.articles.filters.ArticleFilter;
 import me.artemiyulyanov.uptodate.models.Article;
+import me.artemiyulyanov.uptodate.models.ArticleTopic;
 import me.artemiyulyanov.uptodate.models.User;
+import me.artemiyulyanov.uptodate.web.PageableObject;
 import me.artemiyulyanov.uptodate.web.RequestService;
 import me.artemiyulyanov.uptodate.web.ServerResponse;
 import me.artemiyulyanov.uptodate.services.ArticleService;
@@ -17,6 +23,8 @@ import me.artemiyulyanov.uptodate.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,17 +33,17 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.net.URLDecoder;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/articles")
 @Tag(name = "Articles", description = "Endpoints for managing articles")
 public class ArticleController extends AuthenticatedController {
-    public static final int ARTICLE_PAGE_SIZE = 20;
+    public static final int ARTICLE_PAGE_SIZE = 2;
 
     @Autowired
     private ArticleService articleService;
@@ -49,7 +57,10 @@ public class ArticleController extends AuthenticatedController {
     @Autowired
     private RequestService requestService;
 
-    @GetMapping(value = "/search", params = {"id"})
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @GetMapping(value = "/get", params = {"id"})
     @Operation(summary = "Find articles with a query", description = "Provide conditions to look up specific article")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "The request has been proceeded successfully"),
@@ -66,7 +77,7 @@ public class ArticleController extends AuthenticatedController {
         return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", wrappedArticle.get());
     }
 
-    @GetMapping(value = "/search", params = {"authorId"})
+    @GetMapping(value = "/get", params = {"authorId"})
     public ResponseEntity<ServerResponse> getArticleByAuthor(@Parameter(description = "An ID of author to find matching articles", required = true) @RequestParam Long authorId, Model model) {
         Optional<User> wrappedAuthor = userService.findById(authorId);
 
@@ -78,10 +89,29 @@ public class ArticleController extends AuthenticatedController {
         return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", articles);
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<ServerResponse> getAllArticles(@Parameter(description = "A page of paginated data") @RequestParam(defaultValue = "1", required = false) Integer page, Model model) {
-        Page<Article> articles = articleService.findAllArticles(PageRequest.of(page - 1, ARTICLE_PAGE_SIZE));
-        return requestService.executePaginatedEntity(HttpStatus.OK, 200, articles);
+    @GetMapping(value = "/search")
+    public ResponseEntity<ServerResponse> getAllArticles(@Parameter(description = "A page of paginated data") @RequestParam(defaultValue = "1", required = false) Integer page, @RequestParam(required = false) Integer pagesCount, @RequestParam(required = false) Integer count, @RequestParam String query, @RequestParam(value = "filters") String filtersRow, Model model) throws JsonProcessingException, UnsupportedEncodingException {
+        HashMap<String, Object> filters = objectMapper.readValue(URLDecoder.decode(filtersRow, "UTF-8"), new TypeReference<>() {});
+        filters.put("query", query);
+
+        PageableObject<Article> pageableObject;
+
+        if (count != null) {
+            pageableObject = PageableObject.of(Article.class, 0, count);
+        } else if (pagesCount != null) {
+            pageableObject = PageableObject.of(Article.class, 0, pagesCount * ARTICLE_PAGE_SIZE);
+        } else {
+            pageableObject = PageableObject.of(Article.class, page - 1, ARTICLE_PAGE_SIZE);
+        }
+
+        Page<Article> paginatedArticles = articleService.findAllArticles(
+                ArticleFilter.applyFilters(
+                        pageableObject,
+                        filters
+                )
+        );
+
+        return requestService.executePaginatedEntity(HttpStatus.OK, 200, paginatedArticles);
     }
 
     @PostMapping("/create")

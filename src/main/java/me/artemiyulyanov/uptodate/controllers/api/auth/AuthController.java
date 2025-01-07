@@ -1,16 +1,15 @@
-package me.artemiyulyanov.uptodate.controllers.auth;
+package me.artemiyulyanov.uptodate.controllers.api.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
-import me.artemiyulyanov.uptodate.controllers.auth.requests.LoginRequest;
-import me.artemiyulyanov.uptodate.controllers.auth.requests.RegisterRequest;
-import me.artemiyulyanov.uptodate.controllers.auth.requests.VerifyCodeRequest;
+import me.artemiyulyanov.uptodate.controllers.api.auth.requests.LoginRequest;
+import me.artemiyulyanov.uptodate.controllers.api.auth.requests.RegisterRequest;
+import me.artemiyulyanov.uptodate.controllers.api.auth.requests.VerifyCodeRequest;
 import me.artemiyulyanov.uptodate.jwt.JWTTokenService;
 import me.artemiyulyanov.uptodate.jwt.JWTUtil;
 import me.artemiyulyanov.uptodate.mail.EmailVerificationCode;
 import me.artemiyulyanov.uptodate.mail.MailService;
-import me.artemiyulyanov.uptodate.models.Role;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.web.RequestService;
 import me.artemiyulyanov.uptodate.web.ServerResponse;
@@ -18,7 +17,6 @@ import me.artemiyulyanov.uptodate.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +24,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController extends AuthenticatedController {
     @Autowired
     private UserService userService;
@@ -62,8 +59,10 @@ public class AuthController extends AuthenticatedController {
             return requestService.executeError(HttpStatus.UNAUTHORIZED, 10, "User is invalid!");
         }
 
+        Optional<User> wrappedUser = userService.findByUsername(username);
+
         String token = jwtUtil.generateToken(username);
-        return requestService.executeTemplate(HttpStatus.OK, 200, "The authorization has been performed successfully!", Map.of("jwt_token", token));
+        return requestService.executeTemplate(HttpStatus.OK, 200, "The authorization has been performed successfully!", Map.of("jwt_token", token, "user", wrappedUser.get()));
     }
 
     @PostMapping("/register")
