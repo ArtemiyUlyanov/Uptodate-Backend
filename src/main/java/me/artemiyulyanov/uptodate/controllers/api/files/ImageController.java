@@ -1,6 +1,7 @@
 package me.artemiyulyanov.uptodate.controllers.api.files;
 
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
+import me.artemiyulyanov.uptodate.controllers.api.files.responses.FileUploadResponse;
 import me.artemiyulyanov.uptodate.minio.MinioMediaFile;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.models.User;
@@ -28,36 +29,42 @@ public class ImageController extends AuthenticatedController {
     private RequestService requestService;
 
     @GetMapping("/get")
-    public ResponseEntity getImage(@RequestParam String path, Model model) {
+    public ResponseEntity<?> getImage(@RequestParam String path, Model model) {
         MinioMediaFile mediaFile = minioService.getMediaFile(path);
 
         try (InputStream inputStream = mediaFile.getInputStream()) {
-            return requestService.executeImage(HttpStatus.OK, mediaFile.getMediaType(), inputStream.readAllBytes());
+            return requestService.executeMediaResponse(HttpStatus.OK, mediaFile.getMediaType(), inputStream.readAllBytes());
         } catch (Exception e) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 20, "Unable to return image!");
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Unable to return image!");
         }
     }
 
     @Deprecated
     @PostMapping("/upload")
-    public ResponseEntity<ServerResponse> uploadImage(@RequestParam MultipartFile file) {
+    public ResponseEntity<?> uploadImage(@RequestParam MultipartFile file) {
         Optional<User> wrappedUser = getAuthorizedUser();
 
-        if (!isUserAuthorized()) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
-        }
+//        if (!isUserAuthorized()) {
+//            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
+//        }
 
         try {
             String objectKey = wrappedUser.get().getUsername() + File.separator + file.getOriginalFilename();
 
             if (!MinioMediaFile.isAvailable(objectKey)) {
-                return requestService.executeError(HttpStatus.BAD_REQUEST, 21, "This file format is unavailable!");
+                return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "This file format is unavailable!");
             }
 
             minioService.uploadFile(objectKey, file);
-            return requestService.executeTemplate(HttpStatus.OK, 200, "The file has been uploaded successfully!", Map.of("path", objectKey));
+            return requestService.executeCustomResponse(
+                    FileUploadResponse.builder()
+                            .status(HttpStatus.OK.value())
+                            .message("The file has been uploaded successfully!")
+                            .path(objectKey)
+                            .build()
+            );
         } catch (NullPointerException e) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 20, "Unable to upload image!");
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Unable to upload image!");
         }
     }
 }

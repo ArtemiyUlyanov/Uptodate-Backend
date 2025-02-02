@@ -3,7 +3,6 @@ package me.artemiyulyanov.uptodate.services;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import me.artemiyulyanov.uptodate.minio.MinioService;
-import me.artemiyulyanov.uptodate.minio.resources.ArticleCommentResourceManager;
 import me.artemiyulyanov.uptodate.minio.resources.UserResourceManager;
 import me.artemiyulyanov.uptodate.models.Role;
 import me.artemiyulyanov.uptodate.models.User;
@@ -18,7 +17,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -86,12 +84,11 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         return userRepository.findById(id);
     }
 
-    public User createNewUser(User user) {
+    public void createNewUser(User user) {
         Role basicRole = roleService.findRoleByName("USER");
         user.setRoles(Set.of(basicRole));
 
         userRepository.save(user);
-        return user;
     }
 
     public void save(User user) {
@@ -107,14 +104,12 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
     }
 
     public boolean userExists(String username, String email) {
-        return existsByEmail(email) && existsByUsername(username);
+        return existsByEmail(email) || existsByUsername(username);
     }
 
     public boolean isUserVaild(String username, String password) {
         Optional<User> user = userRepository.findByUsername(username);
-        if (!user.isPresent()) return false;
-
-        return passwordEncoder.matches(password, user.get().getPassword());
+        return user.filter(value -> passwordEncoder.matches(password, value.getPassword())).isPresent();
     }
 
     @Override

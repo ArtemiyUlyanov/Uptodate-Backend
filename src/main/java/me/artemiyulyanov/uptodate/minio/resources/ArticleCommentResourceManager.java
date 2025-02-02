@@ -3,7 +3,6 @@ package me.artemiyulyanov.uptodate.minio.resources;
 import lombok.*;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.models.ArticleComment;
-import me.artemiyulyanov.uptodate.models.text.ArticleTextFragment;
 import me.artemiyulyanov.uptodate.repositories.ArticleCommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,8 +20,8 @@ import java.util.List;
 public class ArticleCommentResourceManager implements ResourceManager<ArticleComment> {
     public static final String RESOURCES_FOLDER = "articles/%d/comments/%d";
 
-    @Autowired
-    private ArticleCommentRepository articleCommentRepository;
+//    @Autowired
+//    private ArticleCommentRepository articleCommentRepository;
 
     @Autowired
     private MinioService minioService;
@@ -30,27 +29,32 @@ public class ArticleCommentResourceManager implements ResourceManager<ArticleCom
     @Override
     public void uploadResources(ArticleComment comment, List<MultipartFile> files) {
         if (files != null) {
-            List<String> objectKeys = files
-                    .stream()
-                    .map(file -> getResourceFolder(comment) + File.separator + file.getOriginalFilename())
-                    .toList();
+//            List<String> objectKeys = files
+//                    .stream()
+//                    .map(file -> getResourceFolder(comment) + File.separator + file.getOriginalFilename())
+//                    .toList();
 
             files.forEach(file -> minioService.uploadFile(getResourceFolder(comment) + File.separator + file.getOriginalFilename(), file));
 
-            comment.setResources(objectKeys);
-            articleCommentRepository.save(comment);
+//            comment.setResources(objectKeys);
+//            articleCommentRepository.save(comment);
         }
     }
 
     @Override
     public void updateResources(ArticleComment comment, List<MultipartFile> files) {
+        deleteResources(comment);
+
         if (files != null) {
+//            List<String> objectKeys = files
+//                    .stream()
+//                    .map(file -> getResourceFolder(comment) + File.separator + file.getOriginalFilename())
+//                    .toList();
+
             files.forEach(file -> minioService.uploadFile(getResourceFolder(comment) + File.separator + file.getOriginalFilename(), file));
 
-            List<String> resources = getResources(comment);
-            resources.stream()
-                    .filter(resource -> !comment.getResources().contains(resource))
-                    .forEach(resource -> minioService.deleteFile(resource));
+//            comment.setResources(objectKeys);
+//            articleCommentRepository.save(comment);
         }
     }
 

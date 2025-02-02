@@ -4,20 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.minio.resources.ArticleResourceManager;
-import me.artemiyulyanov.uptodate.minio.resources.UserResourceManager;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.ArticleTopic;
 import me.artemiyulyanov.uptodate.models.User;
-import me.artemiyulyanov.uptodate.models.text.ArticleTextFragment;
 import me.artemiyulyanov.uptodate.repositories.ArticleRepository;
 import me.artemiyulyanov.uptodate.web.PageableObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -60,14 +56,7 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
                 .author(author)
                 .heading("No longer unavailable — widely-distributed famous fashion brands appear in Shanghai’s streets")
                 .description("The recent surge of globally renowned fashion brands establishing a strong presence in Shanghai’s retail scene.")
-                .content(List.of(
-                                ArticleTextFragment
-                                        .builder()
-                                        .text("The content of the article #1")
-                                        .type(ArticleTextFragment.ArticleTextFragmentType.DEFAULT)
-                                        .build()
-                        )
-                )
+                .content("The content of the article #1")
                 .topics(Set.of(topic1, topic2))
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -76,14 +65,7 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
                 .author(author)
                 .heading("Top 10 places to visit in Amsterdam — the last one is the most wondering")
                 .description("The top 10 must-visit locations in Amsterdam, showcasing the city’s iconic canals, historical landmarks, and vibrant cultural spots.")
-                .content(List.of(
-                                ArticleTextFragment
-                                        .builder()
-                                        .text("The content of the article #2")
-                                        .type(ArticleTextFragment.ArticleTextFragmentType.DEFAULT)
-                                        .build()
-                        )
-                )
+                .content("The content of the article #2")
                 .topics(Set.of(topic3, topic4))
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -92,14 +74,7 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
                 .author(author)
                 .heading("The future is up to you — the programming languages to be demanded in 2024")
                 .description("The programming languages predicted to be in high demand in 2024, as technology continues to evolve at a rapid pace.")
-                .content(List.of(
-                                ArticleTextFragment
-                                        .builder()
-                                        .text("The content of the article #2")
-                                        .type(ArticleTextFragment.ArticleTextFragmentType.DEFAULT)
-                                        .build()
-                        )
-                )
+                .content("The content of the article #3")
                 .topics(Set.of(topic5))
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -129,6 +104,10 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         return articleRepository.findById(id);
     }
 
+    public Optional<Article> findByDateAndHeadingContaining(Date date, String heading) {
+        return articleRepository.findByDateAndHeadingContaining(date, heading).stream().findFirst();
+    }
+
     public List<Article> findByAuthor(User author) {
         return articleRepository.findByAuthor(author);
     }
@@ -153,47 +132,4 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
                 .minioService(minioService)
                 .build();
     }
-
-//    @Override
-//    public void uploadResources(Article article, List<MultipartFile> resources) {
-//        if (resources != null) {
-//            minioService.saveArticleResources(article, resources);
-//        }
-//    }
-//
-//    @Override
-//    public void updateResources(Article article) {
-//        List<String> images = article.getContent()
-//                .stream()
-//                .filter(fragment -> fragment.getType() == ArticleTextFragment.ArticleTextFragmentType.IMAGE)
-//                .map(ArticleTextFragment::getText)
-//                .toList();
-//
-//        List<String> resources = minioService.getArticleResources(article);
-//        resources.stream()
-//                .filter(resource -> !images.contains(resource))
-//                .forEach(resource -> minioService.removeFile(resource));
-//    }
-//
-//    @Override
-//    public void deleteResources(Article article) {
-//        if (minioService.fileExists(getResourceFolder(article))) minioService.deleteFolder(getResourceFolder(article));
-//    }
-
-//    @Deprecated
-//    public void update(Article article, List<MultipartFile> resources) {
-//        if (resources != null) {
-//            minioService.saveArticleResources(article, resources);
-//        }
-//
-//        articleRepository.save(article);
-//    }
-
-    //    public List<ArticleTextFragment> getArticleTextFragments(Article article) {
-//        try {
-//            return objectMapper.readValue(article.getContent(), objectMapper.getTypeFactory().constructCollectionType(List.class, ArticleTextFragment.class));
-//        } catch (IOException e) {
-//            return new ArrayList<>();
-//        }
-//    }
 }

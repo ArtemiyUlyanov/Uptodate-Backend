@@ -14,5 +14,5 @@ import org.springframework.stereotype.Component;
 public class ServerResponse<T> {
     private T response;
     private String message;
-    private int code;
+    private int status;
 }

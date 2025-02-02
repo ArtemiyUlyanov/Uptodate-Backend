@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -21,12 +22,18 @@ public class User {
     private Long id;
 
     @Column(unique = true)
-    private String username, email;
+    private String username;
 
     @JsonIgnore
-    private String password;
+    private String email, password;
 
     private String firstName, lastName, icon;
+
+    @ManyToMany(mappedBy = "articleLikes")
+    private Set<Article> likedArticles = new HashSet<>();
+
+    @ManyToMany(mappedBy = "articleCommentLikes")
+    private Set<ArticleComment> likedComments = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<Role> roles;

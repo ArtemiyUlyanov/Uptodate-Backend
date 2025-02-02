@@ -83,13 +83,17 @@ public class MinioService {
     }
 
     public MinioMediaFile getMediaFile(String objectKey) {
-        S3Object s3Object = amazonS3.getObject(new GetObjectRequest(bucket, objectKey));
+        try {
+            S3Object s3Object = amazonS3.getObject(new GetObjectRequest(bucket, objectKey));
 
-        return MinioMediaFile
-                .builder()
-                .inputStream(s3Object.getObjectContent())
-                .objectKey(objectKey)
-                .build();
+            return MinioMediaFile
+                    .builder()
+                    .inputStream(s3Object.getObjectContent())
+                    .objectKey(objectKey)
+                    .build();
+        } catch (AmazonS3Exception e) {
+            return null;
+        }
     }
 
     public List<String> getFolder(String prefix) {

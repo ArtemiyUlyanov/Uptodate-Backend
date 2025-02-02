@@ -35,36 +35,13 @@ public class UserController extends AuthenticatedController {
     private RequestService requestService;
 
     @GetMapping("/get")
-    public ResponseEntity<ServerResponse> getUser(@RequestParam Long id, Model model) {
+    public ResponseEntity<?> getUser(@RequestParam Long id, Model model) {
         Optional<User> wrappedUser = userService.findById(id);
 
-        if (!wrappedUser.isPresent()) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "User is undefined!");
+        if (wrappedUser.isEmpty()) {
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "User is undefined!");
         }
 
-        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", wrappedUser.get());
-    }
-
-    @PatchMapping("/edit")
-    public ResponseEntity<ServerResponse> editUser(@RequestBody Map<String, Object> updates, @RequestParam(value = "icon", required = false) MultipartFile icon, Model model) {
-        Optional<User> wrappedUser = getAuthorizedUser();
-
-        if (!isUserAuthorized()) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
-        }
-
-        User newUser = wrappedUser.get();
-        if (icon != null) userService.getResourceManager().updateResources(newUser, List.of(icon));
-
-        updates.forEach((key, value) -> {
-            Field field = ReflectionUtils.findField(Article.class, key);
-            if (field != null) {
-                field.setAccessible(true);
-                ReflectionUtils.setField(field, newUser, value);
-            }
-        });
-
-        userService.save(newUser);
-        return requestService.executeMessage(HttpStatus.OK, 200, "The changes have been applied successfully!");
+        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", wrappedUser.get());
     }
 }

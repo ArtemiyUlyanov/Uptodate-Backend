@@ -6,7 +6,7 @@ import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
 import me.artemiyulyanov.uptodate.controllers.api.auth.requests.LoginRequest;
 import me.artemiyulyanov.uptodate.controllers.api.auth.requests.RegisterRequest;
 import me.artemiyulyanov.uptodate.controllers.api.auth.requests.VerifyCodeRequest;
-import me.artemiyulyanov.uptodate.jwt.JWTTokenService;
+import me.artemiyulyanov.uptodate.controllers.api.auth.responses.TokenResponse;
 import me.artemiyulyanov.uptodate.jwt.JWTUtil;
 import me.artemiyulyanov.uptodate.mail.EmailVerificationCode;
 import me.artemiyulyanov.uptodate.mail.MailService;
@@ -15,8 +15,12 @@ import me.artemiyulyanov.uptodate.web.RequestService;
 import me.artemiyulyanov.uptodate.web.ServerResponse;
 import me.artemiyulyanov.uptodate.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -35,9 +39,6 @@ public class AuthController extends AuthenticatedController {
     private JWTUtil jwtUtil;
 
     @Autowired
-    private JWTTokenService jwtTokenService;
-
-    @Autowired
     private RequestService requestService;
 
     @Autowired
@@ -46,33 +47,47 @@ public class AuthController extends AuthenticatedController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
     @PostMapping("/login")
-    public ResponseEntity<ServerResponse> login(@RequestBody LoginRequest loginRequest, Model model) {
-        if (isUserAuthorized()) {
-            return requestService.executeError(HttpStatus.UNAUTHORIZED, 11, "User is already authorized!");
-        }
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, Model model) {
+//        if (isUserAuthorized()) {
+//            return requestService.executeApiResponse(HttpStatus.UNAUTHORIZED, 11, "User is already authorized!");
+//        }
 
         String username = loginRequest.getUsername();
         String password = loginRequest.getPassword();
 
         if (!userService.isUserVaild(username, password)) {
-            return requestService.executeError(HttpStatus.UNAUTHORIZED, 10, "User is invalid!");
+            return requestService.executeApiResponse(HttpStatus.UNAUTHORIZED, "User is invalid!");
         }
 
-        Optional<User> wrappedUser = userService.findByUsername(username);
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
-        String token = jwtUtil.generateToken(username);
-        return requestService.executeTemplate(HttpStatus.OK, 200, "The authorization has been performed successfully!", Map.of("jwt_token", token, "user", wrappedUser.get()));
+        Optional<User> wrappedUser = userService.findByUsername(username);
+        UserDetails userDetails = userService.loadUserByUsername(username);
+
+        String accessToken = jwtUtil.generateAccessToken(userDetails);
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails);
+
+        return requestService.executeCustomResponse(
+                TokenResponse.builder()
+                    .status(HttpStatus.ACCEPTED.value())
+                    .access_token(accessToken)
+                    .refresh_token(refreshToken)
+                    .build()
+        );
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ServerResponse> register(@RequestBody RegisterRequest registerRequest, Model model) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest, Model model) {
         String username = registerRequest.getUsername();
         String email = registerRequest.getEmail();
         String password = registerRequest.getPassword();
 
         if (userService.userExists(username, email)) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "User already exists!");
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "User already exists!");
         }
 
         registerRequest.setPassword(passwordEncoder.encode(password));
@@ -83,16 +98,17 @@ public class AuthController extends AuthenticatedController {
                         .value(registerRequest)
                         .build()
         ));
-        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", emailVerificationCode);
+
+        return requestService.executeApiResponse(HttpStatus.OK, "The request has been proceeded successfully!");
     }
 
     @PostMapping("/register/verify-code")
-    public ResponseEntity<ServerResponse> registerVerifyCode(@RequestBody VerifyCodeRequest verifyCodeRequest, Model model) {
+    public ResponseEntity<?> registerVerifyCode(@RequestBody VerifyCodeRequest verifyCodeRequest, Model model) {
         String email = verifyCodeRequest.getEmail();
         String code = verifyCodeRequest.getCode();
 
         if (!mailService.validateCode(email, code)) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "The code is invalid!");
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The code is invalid!");
         }
 
         EmailVerificationCode emailVerificationCode = mailService.getVerificationCode(email);
@@ -109,18 +125,24 @@ public class AuthController extends AuthenticatedController {
         mailService.enterCode(email, code);
         userService.createNewUser(user);
 
-        String token = jwtUtil.generateToken(user.getUsername());
-        return requestService.executeTemplate(HttpStatus.OK, 200, "The registration has been performed successfully!", Map.of("jwt_token", token));
+        return requestService.executeApiResponse(HttpStatus.OK, "The registration has been performed successfully!");
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<ServerResponse> logout(@RequestHeader("Authorization") String authorizationHeader, HttpServletRequest request, HttpServletResponse response) {
-        String token = authorizationHeader.substring(7);
-
-        if (jwtTokenService.logout(token)) {
-            return requestService.executeMessage(HttpStatus.OK, 200, "The logout has been performed successfully!");
+    @GetMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestParam String refreshToken) {
+        if (!jwtUtil.isTokenValid(refreshToken) || !jwtUtil.extractScope(refreshToken).equalsIgnoreCase("REFRESH")) {
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Refresh token is invalid!");
         }
 
-        return requestService.executeError(HttpStatus.BAD_REQUEST, 11, "User is not authorized!");
+        String username = jwtUtil.extractUsername(refreshToken);
+        UserDetails userDetails = userService.loadUserByUsername(username);
+
+        String accessToken = jwtUtil.generateAccessToken(userDetails);
+        return requestService.executeCustomResponse(
+                TokenResponse.builder()
+                        .status(HttpStatus.OK.value())
+                        .access_token(accessToken)
+                        .build()
+        );
     }
 }

@@ -18,6 +18,7 @@ public class MinioMediaFile {
     public static final Map<String, MediaType> AVAILABLE_TYPES = Map.of(
             ".png", MediaType.IMAGE_PNG,
             ".jpg", MediaType.IMAGE_JPEG,
+            ".jpeg", MediaType.IMAGE_JPEG,
             ".gif", MediaType.IMAGE_GIF
     );
 

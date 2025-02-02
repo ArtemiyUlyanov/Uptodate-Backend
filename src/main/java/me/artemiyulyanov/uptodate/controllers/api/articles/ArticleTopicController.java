@@ -30,25 +30,25 @@ public class ArticleTopicController {
     private RequestService requestService;
 
     @GetMapping(value = "/get", params = {})
-    public ResponseEntity<ServerResponse> getAllArticleTopics(Model model) {
+    public ResponseEntity<?> getAllArticleTopics(Model model) {
         List<ArticleTopic> topics = articleTopicService.findAll();
-        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", topics);
+        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", topics);
     }
 
     @GetMapping(value = "/get", params = {"id"})
-    public ResponseEntity<ServerResponse> getArticleTopicById(@RequestParam Long id, Model model) {
+    public ResponseEntity<?> getArticleTopicById(@RequestParam Long id, Model model) {
         Optional<ArticleTopic> articleTopic = articleTopicService.findById(id);
 
-        if (!articleTopic.isPresent()) {
-            return requestService.executeError(HttpStatus.BAD_REQUEST, 10, "Article topic is undefined!");
+        if (articleTopic.isEmpty()) {
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article topic is undefined!");
         }
 
-        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", articleTopic.get());
+        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", articleTopic.get());
     }
 
     @GetMapping(value = "/get", params = {"parent"})
-    public ResponseEntity<ServerResponse> getArticleTopicsByParent(@RequestParam String parent, Model model) {
+    public ResponseEntity<?> getArticleTopicsByParent(@RequestParam String parent, Model model) {
         List<ArticleTopic> articleTopics = articleTopicService.findByParent(parent);
-        return requestService.executeEntity(HttpStatus.OK, 200, "The request has been proceeded successfully!", articleTopics);
+        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", articleTopics);
     }
 }
