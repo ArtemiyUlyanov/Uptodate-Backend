@@ -3,7 +3,6 @@ package me.artemiyulyanov.uptodate.minio.resources;
 import lombok.*;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.models.Article;
-import me.artemiyulyanov.uptodate.models.text.ArticleTextFragment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,16 +31,11 @@ public class ArticleResourceManager implements ResourceManager<Article> {
 
     @Override
     public void updateResources(Article article, List<MultipartFile> files) {
-        List<String> images = article.getContent()
-                .stream()
-                .filter(fragment -> fragment.getType() == ArticleTextFragment.ArticleTextFragmentType.IMAGE)
-                .map(ArticleTextFragment::getText)
-                .toList();
+        deleteResources(article);
 
-        List<String> resources = getResources(article);
-        resources.stream()
-                .filter(resource -> !images.contains(resource))
-                .forEach(resource -> minioService.deleteFile(resource));
+        if (files != null) {
+            files.forEach(file -> minioService.uploadFile(getResourceFolder(article) + File.separator + file.getOriginalFilename(), file));
+        }
     }
 
     @Override

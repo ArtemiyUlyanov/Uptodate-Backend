@@ -3,12 +3,9 @@ package me.artemiyulyanov.uptodate.models;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
-import me.artemiyulyanov.uptodate.models.converters.ArticleTextFragmentConverter;
-import me.artemiyulyanov.uptodate.models.text.ArticleTextFragment;
-import org.hibernate.annotations.Type;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,11 +25,18 @@ public class Article {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String heading, description;
+    private Integer views = 0;
 
-    @Convert(converter = ArticleTextFragmentConverter.class)
-    @Column(columnDefinition = "JSON")
-    private List<ArticleTextFragment> content;
+    @ManyToMany
+    @JoinTable(
+            name = "articles_likes",
+            joinColumns = @JoinColumn(name = "article_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    @JsonIgnoreProperties({"articles", "comments", "likedArticles", "likedComments"})
+    private Set<User> articleLikes = new HashSet<>();
+
+    private String heading, description, content;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
@@ -50,6 +54,32 @@ public class Article {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"articles", "comments"})
+    @JsonIgnoreProperties({"articles", "comments", "likedArticles", "likedComments"})
     private User author;
+
+    public List<String> getLikedUsernames() {
+        return articleLikes.stream().map(User::getUsername).toList();
+    }
+
+    @Transient
+    public Article like(User user) {
+        if (!articleLikes.contains(user)) {
+            articleLikes.add(user);
+        } else {
+            articleLikes.remove(user);
+        }
+
+        return this;
+    }
+
+    @Transient
+    public Article like(User user, boolean liked) {
+        if (liked && !articleLikes.contains(user)) {
+            articleLikes.add(user);
+        } else if (!liked && articleLikes.contains(user)) {
+            articleLikes.remove(user);
+        }
+
+        return this;
+    }
 }

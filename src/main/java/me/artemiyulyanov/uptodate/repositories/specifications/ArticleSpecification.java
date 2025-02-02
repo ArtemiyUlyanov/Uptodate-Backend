@@ -21,8 +21,13 @@ public class ArticleSpecification {
             Join<Article, ArticleTopic> topicsJoin = root.join("topics");
 
             List<Predicate> predicates = topics.stream()
-                    .map(topic -> criteriaBuilder.and(
-                            criteriaBuilder.equal(topicsJoin.get("name"), topic)
+                    .map(topic -> criteriaBuilder.or(
+                            criteriaBuilder.equal(criteriaBuilder.function("JSON_UNQUOTE", String.class,
+                                    criteriaBuilder.function("JSON_EXTRACT", String.class,
+                                            topicsJoin.get("name"), criteriaBuilder.literal("$.english"))), topic),
+                            criteriaBuilder.equal(criteriaBuilder.function("JSON_UNQUOTE", String.class,
+                                    criteriaBuilder.function("JSON_EXTRACT", String.class,
+                                            topicsJoin.get("name"), criteriaBuilder.literal("$.russian"))), topic)
                     ))
                     .toList();
 
