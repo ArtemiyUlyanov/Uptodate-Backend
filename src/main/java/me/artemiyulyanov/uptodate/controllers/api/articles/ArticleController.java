@@ -9,17 +9,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
 import me.artemiyulyanov.uptodate.controllers.api.articles.filters.ArticleFilter;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.ArticleTopic;
 import me.artemiyulyanov.uptodate.models.User;
+import me.artemiyulyanov.uptodate.services.*;
 import me.artemiyulyanov.uptodate.web.PageableObject;
 import me.artemiyulyanov.uptodate.web.RequestService;
 import me.artemiyulyanov.uptodate.web.ServerResponse;
-import me.artemiyulyanov.uptodate.services.ArticleService;
-import me.artemiyulyanov.uptodate.services.ArticleTopicService;
-import me.artemiyulyanov.uptodate.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,10 +42,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/articles")
-@Tag(name = "Articles", description = "Endpoints for managing articles")
 public class ArticleController extends AuthenticatedController {
     public static final int ARTICLE_PAGE_SIZE = 2;
 
@@ -55,6 +54,12 @@ public class ArticleController extends AuthenticatedController {
 
     @Autowired
     private ArticleTopicService articleTopicService;
+
+    @Autowired
+    private ArticleViewService articleViewService;
+
+    @Autowired
+    private ArticleLikeService articleLikeService;
 
     @Autowired
     private UserService userService;
@@ -66,13 +71,7 @@ public class ArticleController extends AuthenticatedController {
     private ObjectMapper objectMapper;
 
     @GetMapping(value = "/get", params = {"id"})
-    @Operation(summary = "Find articles with a query", description = "Provide conditions to look up specific article")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "The request has been proceeded successfully"),
-        @ApiResponse(responseCode = "10", description = "User is undefined"),
-        @ApiResponse(responseCode = "20", description = "Article is undefined")
-    })
-    public ResponseEntity<?> getArticleById(@Parameter(description = "An ID of article to find a matching article", required = true) @RequestParam Long id, Model model) {
+    public ResponseEntity<?> getArticleById(@RequestParam Long id) {
         Optional<Article> wrappedArticle = articleService.findById(id);
 
         if (wrappedArticle.isEmpty()) {
@@ -83,7 +82,7 @@ public class ArticleController extends AuthenticatedController {
     }
 
     @GetMapping(value = "/get", params = {"authorId"})
-    public ResponseEntity<?> getArticlesByAuthor(@Parameter(description = "An ID of author to find matching articles", required = true) @RequestParam Long authorId, Model model) {
+    public ResponseEntity<?> getArticlesByAuthor(@RequestParam Long authorId) {
         Optional<User> wrappedAuthor = userService.findById(authorId);
 
         if (wrappedAuthor.isEmpty()) {
@@ -94,8 +93,10 @@ public class ArticleController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", articles);
     }
 
-    @GetMapping(value = "/get", params = {"heading", "createdAt"})
-    public ResponseEntity<?> getArticleByHeadingAndDate(@RequestParam(value = "heading") String heading, @RequestParam(value = "createdAt") String createdAtString, Model model) {
+    @GetMapping("/retrieve")
+    public ResponseEntity<?> retrieveArticle(
+            @RequestParam(value = "heading") String heading,
+            @RequestParam(value = "createdAt") String createdAtString) {
         Date date;
 
         try {
@@ -110,11 +111,17 @@ public class ArticleController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
         }
 
+        articleViewService.view(wrappedArticle.get(), getAuthorizedUser().orElse(null));
         return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", wrappedArticle.get());
     }
 
     @GetMapping("/search")
-    public ResponseEntity<?> searchArticles(@Parameter(description = "A page of paginated data") @RequestParam(defaultValue = "1", required = false) Integer page, @RequestParam(required = false) Integer pagesCount, @RequestParam(required = false) Integer count, @RequestParam String query, @RequestParam(value = "filters") String filtersRow, Model model) throws JsonProcessingException, UnsupportedEncodingException {
+    public ResponseEntity<?> searchArticles(
+            @RequestParam(defaultValue = "1", required = false) Integer page,
+            @RequestParam(required = false) Integer pagesCount,
+            @RequestParam(required = false) Integer count,
+            @RequestParam String query,
+            @RequestParam(value = "filters") String filtersRow) throws JsonProcessingException, UnsupportedEncodingException {
         HashMap<String, Object> filters = objectMapper.readValue(URLDecoder.decode(filtersRow, "UTF-8"), new TypeReference<>() {});
         filters.put("query", query);
 
@@ -142,35 +149,38 @@ public class ArticleController extends AuthenticatedController {
     public ResponseEntity<?> likeArticle(@RequestParam Long id, Model model) {
         Optional<User> wrappedUser = getAuthorizedUser();
 
-//        if (!isUserAuthorized()) {
-//            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
-//        }
-
         Optional<Article> wrappedArticle = articleService.findById(id);
         if (wrappedArticle.isEmpty()) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The article is undefined!");
         }
 
-        Article newArticle = wrappedArticle.get();
-        newArticle.like(wrappedUser.get());
-        articleService.save(newArticle);
+        articleLikeService.like(wrappedArticle.get(), wrappedUser.get());
         return requestService.executeApiResponse(HttpStatus.OK, "The article has been liked by the user successfully!");
     }
 
     @PostMapping("/create")
-    @Operation(summary = "Create a new article", description = "Provide article data to create a new article", responses = {
-            @ApiResponse(responseCode = "200", description = "The request has been proceeded successfully"),
-            @ApiResponse(responseCode = "10", description = "The authorized user is undefined")
-    })
-    public ResponseEntity<?> createArticle(@Schema(implementation = Article.class, description = "An article to be saved") @RequestBody Article article, @RequestParam(value = "resources", required = false) List<MultipartFile> resources, Model model) {
+    public ResponseEntity<?> createArticle(
+            @RequestParam String heading,
+            @RequestParam String description,
+            @RequestParam String content,
+            @RequestParam List<String> topicsNames,
+            @RequestParam(value = "resources", required = false) List<MultipartFile> resources) {
         Optional<User> wrappedUser = getAuthorizedUser();
 
-//        if (!isUserAuthorized()) {
-//            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
-//        }
+        Set<ArticleTopic> topics = topicsNames.stream()
+                        .map(articleTopicService::findByName)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toSet());
 
-        article.setCreatedAt(LocalDateTime.now());
-        article.setAuthor(wrappedUser.get());
+        Article article = Article.builder()
+                        .heading(heading)
+                        .description(description)
+                        .content(content)
+                        .topics(topics)
+                        .createdAt(LocalDateTime.now())
+                        .author(wrappedUser.get())
+                        .build();
 
         articleService.save(article);
         if (resources != null) {
@@ -180,20 +190,16 @@ public class ArticleController extends AuthenticatedController {
         return requestService.executeApiResponse(HttpStatus.OK, "The article has been created!");
     }
 
-    @PatchMapping("/edit")
-    @Operation(summary = "Edit an article", description = "Provide an ID of article and changes to apply", responses = {
-            @ApiResponse(responseCode = "200", description = "The request has been proceeded successfully"),
-            @ApiResponse(responseCode = "10", description = "The authorized user is undefined"),
-            @ApiResponse(responseCode = "11", description = "The authorized user has no authority to apply changes"),
-            @ApiResponse(responseCode = "20", description = "Article user is undefined")
-    })
-    public ResponseEntity<?> editArticle(@Parameter(description = "An ID of article to apply changes", required = true) @RequestParam Long id, @Schema(implementation = Article.class, description = "The changed article data to put in") @RequestBody Map<String, Object> updates, @RequestParam(value = "newFiles", required = false) List<MultipartFile> newFiles, Model model) {
+    @PutMapping("/edit")
+    public ResponseEntity<?> editArticle(
+            @RequestParam Long id,
+            @RequestParam String heading,
+            @RequestParam String description,
+            @RequestParam String content,
+            @RequestParam List<String> topicsNames,
+            @RequestParam(value = "newFiles", required = false) List<MultipartFile> newFiles) {
         Optional<User> wrappedUser = getAuthorizedUser();
         Optional<Article> wrappedArticle = articleService.findById(id);
-
-//        if (!isUserAuthorized()) {
-//            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
-//        }
 
         if (wrappedArticle.isEmpty()) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
@@ -204,30 +210,12 @@ public class ArticleController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the changes!");
         }
 
-        updates.forEach((key, value) -> {
-            Field field = ReflectionUtils.findField(Article.class, key);
-            if (field != null) {
-                field.setAccessible(true);
-                ReflectionUtils.setField(field, newArticle, value);
-            }
-        });
-
-        articleService.save(newArticle);
-        if (newFiles != null) {
-            articleService.getResourceManager().updateResources(newArticle, newFiles);
-        }
-
+        articleService.editArticle(id, heading, description, content, topicsNames, newFiles);
         return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
     }
 
     @DeleteMapping("/delete")
-    @Operation(summary = "Delete an article", description = "Provide an ID of article to delete", responses = {
-            @ApiResponse(responseCode = "200", description = "The request has been proceeded successfully"),
-            @ApiResponse(responseCode = "10", description = "The authorized user is undefined"),
-            @ApiResponse(responseCode = "11", description = "The authorized user has no authority to apply changes"),
-            @ApiResponse(responseCode = "20", description = "Article user is undefined")
-    })
-    public ResponseEntity<?> deleteArticle(@Parameter(description = "An ID of article to delete", required = true) @RequestParam Long id, Model model) {
+    public ResponseEntity<?> deleteArticle(@RequestParam Long id) {
         Optional<User> wrappedUser = getAuthorizedUser();
         Optional<Article> wrappedArticle = articleService.findById(id);
 

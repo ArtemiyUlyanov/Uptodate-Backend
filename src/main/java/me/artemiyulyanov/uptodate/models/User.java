@@ -1,6 +1,7 @@
 package me.artemiyulyanov.uptodate.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -29,8 +31,8 @@ public class User {
 
     private String firstName, lastName, icon;
 
-    @ManyToMany(mappedBy = "articleLikes")
-    private Set<Article> likedArticles = new HashSet<>();
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ArticleLike> likes = new HashSet<>();
 
     @ManyToMany(mappedBy = "articleCommentLikes")
     private Set<ArticleComment> likedComments = new HashSet<>();
@@ -43,4 +45,10 @@ public class User {
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleComment> comments = new ArrayList<>();
+
+    public List<Article> getLikedArticles() {
+        return likes.stream()
+                .map(ArticleLike::getArticle)
+                .toList();
+    }
 }

@@ -17,8 +17,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,6 +92,20 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         user.setRoles(Set.of(basicRole));
 
         userRepository.save(user);
+    }
+
+    public void editUser(Long id, String username, String firstName, String lastName, MultipartFile icon) {
+        User newUser = userRepository.findById(id).get();
+
+        newUser.setUsername(username);
+        newUser.setFirstName(firstName);
+        newUser.setLastName(lastName);
+
+        String iconObjectKey = getResourceManager().getResourceFolder(newUser) + File.separator + icon.getOriginalFilename();
+        getResourceManager().updateResources(newUser, List.of(icon));
+
+        newUser.setIcon(iconObjectKey);
+        userRepository.save(newUser);
     }
 
     public void save(User user) {

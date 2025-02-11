@@ -5,10 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import me.artemiyulyanov.uptodate.services.ArticleCommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -19,9 +16,10 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
+@Table(name = "articles_comments")
 @Getter
 @Setter
-@Table(name = "articles_comments")
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ArticleComment {
@@ -34,13 +32,8 @@ public class ArticleComment {
 
     @ManyToOne
     @JoinColumn(name = "article_id", nullable = false)
-    @JsonIgnoreProperties({"author", "comments"})
+    @JsonIgnoreProperties({"author", "comments", "likes", "views"})
     private Article article;
-
-//    @ElementCollection
-//    @CollectionTable(name = "comments_resources", joinColumns = @JoinColumn(name = "comment_id"))
-//    @Column(name = "resource")
-//    private List<String> resources;
 
     @Transient
     private List<String> resources;
@@ -56,12 +49,12 @@ public class ArticleComment {
             joinColumns = @JoinColumn(name = "comment_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    @JsonIgnoreProperties({"articles", "comments", "likedArticles", "likedComments"})
+    @JsonIgnoreProperties({"articles", "comments", "likes", "likedComments", "likedArticles"})
     private Set<User> articleCommentLikes = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"articles", "comments", "likedArticles", "likedComments"})
+    @JsonIgnoreProperties({"articles", "comments", "likes", "likedComments", "likedArticles"})
     private User author;
 
     @PostLoad

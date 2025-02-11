@@ -41,16 +41,12 @@ public class UserResourceManager implements ResourceManager<User> {
 
     @Override
     public void updateResources(User user, List<MultipartFile> files) {
+        deleteResources(user);
         MultipartFile icon = files.get(0);
 
         if (icon != null) {
             String iconObjectKey = getResourceFolder(user) + File.separator + icon.getOriginalFilename();
-
-            minioService.deleteFolder(getResourceFolder(user));
             minioService.uploadFile(iconObjectKey, icon);
-
-            user.setIcon(iconObjectKey);
-            userRepository.save(user);
         }
     }
 

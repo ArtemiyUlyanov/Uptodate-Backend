@@ -87,7 +87,7 @@ public class AuthController extends AuthenticatedController {
         String password = registerRequest.getPassword();
 
         if (userService.userExists(username, email)) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "User already exists!");
+            return requestService.executeApiResponse(HttpStatus.CONFLICT, "User already exists!");
         }
 
         registerRequest.setPassword(passwordEncoder.encode(password));
@@ -125,13 +125,23 @@ public class AuthController extends AuthenticatedController {
         mailService.enterCode(email, code);
         userService.createNewUser(user);
 
-        return requestService.executeApiResponse(HttpStatus.OK, "The registration has been performed successfully!");
+        UserDetails userDetails = userService.loadUserByUsername(user.getUsername());
+        String accessToken = jwtUtil.generateAccessToken(userDetails);
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails);
+
+        return requestService.executeCustomResponse(
+                TokenResponse.builder()
+                        .status(HttpStatus.ACCEPTED.value())
+                        .access_token(accessToken)
+                        .refresh_token(refreshToken)
+                        .build()
+        );
     }
 
     @GetMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestParam String refreshToken) {
         if (!jwtUtil.isTokenValid(refreshToken) || !jwtUtil.extractScope(refreshToken).equalsIgnoreCase("REFRESH")) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Refresh token is invalid!");
+            return requestService.executeApiResponse(HttpStatus.CONFLICT, "Refresh token is invalid!");
         }
 
         String username = jwtUtil.extractUsername(refreshToken);

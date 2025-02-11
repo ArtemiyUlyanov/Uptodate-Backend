@@ -15,9 +15,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ArticleService implements ResourceService<ArticleResourceManager> {
@@ -110,6 +112,27 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
 
     public List<Article> findByAuthor(User author) {
         return articleRepository.findByAuthor(author);
+    }
+
+//    public List<Article> findByAuthorAfterDate(User author, LocalDateTime after) {
+//        return articleRepository.findArticlesByAuthorAfterDate(author, after);
+//    }
+
+    public void editArticle(Long id, String heading, String description, String content, List<String> topicsNames, List<MultipartFile> newFiles) {
+        Article newArticle = articleRepository.findById(id).get();
+        Set<ArticleTopic> topics = topicsNames.stream()
+                .map(articleTopicService::findByName)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+
+        newArticle.setHeading(heading);
+        newArticle.setDescription(description);
+        newArticle.setContent(content);
+        newArticle.setTopics(topics);
+        getResourceManager().updateResources(newArticle, newFiles);
+
+        articleRepository.save(newArticle);
     }
 
     public void deleteById(Long id) {

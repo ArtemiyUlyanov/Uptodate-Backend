@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import me.artemiyulyanov.uptodate.mail.EmailVerificationCode;
 import me.artemiyulyanov.uptodate.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,18 +25,20 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JWTUtil jwtUtil;
 
+    @Lazy
+    @Autowired
+    private UserService userService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-//        if (jwtExemptionManager.isRequestExempt(request)) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-
         String token = extractTokenFromRequest(request);
+        String username = null;
 
         if (token != null && jwtUtil.isTokenValid(token) && jwtUtil.extractScope(token).equalsIgnoreCase("ACCESS")) {
-            String username = jwtUtil.extractUsername(token);
+            username = jwtUtil.extractUsername(token);
+        }
 
+        if (username != null && userService.existsByUsername(username)) {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                     username,
                     null,
