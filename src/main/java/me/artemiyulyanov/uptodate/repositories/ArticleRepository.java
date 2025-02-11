@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +19,9 @@ public interface ArticleRepository extends JpaRepository<Article, Long>, JpaSpec
     List<Article> findByAuthor(User author);
     Optional<Article> findByHeadingContainingAndAuthorId(String heading, Long authorId);
 
-    @Query("SELECT e FROM Article e WHERE FUNCTION('DATE', e.createdAt) = :date AND e.heading LIKE %:heading%")
+    @Query("SELECT a FROM Article a WHERE FUNCTION('DATE', a.createdAt) = :date AND a.heading LIKE %:heading%")
     List<Article> findByDateAndHeadingContaining(@Param("date") Date date, @Param("heading") String heading);
+
+//    @Query("SELECT a FROM Article a WHERE a.author = :user AND a.createdAt >= :after")
+//    List<Article> findArticlesByAuthorAfterDate(@Param("user") User user, @Param("after") LocalDateTime after);
 }

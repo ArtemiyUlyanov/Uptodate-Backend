@@ -25,24 +25,22 @@ public class Article {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer views = 0;
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArticleView> views = new ArrayList<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "articles_likes",
-            joinColumns = @JoinColumn(name = "article_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    @JsonIgnoreProperties({"articles", "comments", "likedArticles", "likedComments"})
-    private Set<User> articleLikes = new HashSet<>();
+    private String heading, description;
 
-    private String heading, description, content;
+    @Column(columnDefinition = "LONGTEXT")
+    private String content;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleComment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArticleLike> likes = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(
@@ -54,32 +52,21 @@ public class Article {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"articles", "comments", "likedArticles", "likedComments"})
+    @JsonIgnoreProperties({"articles", "comments", "likes", "likedComments", "likedArticles"})
     private User author;
 
     public List<String> getLikedUsernames() {
-        return articleLikes.stream().map(User::getUsername).toList();
+        return likes.stream()
+                .map(ArticleLike::getUser)
+                .map(User::getUsername)
+                .toList();
     }
 
-    @Transient
-    public Article like(User user) {
-        if (!articleLikes.contains(user)) {
-            articleLikes.add(user);
-        } else {
-            articleLikes.remove(user);
-        }
-
-        return this;
+    public int getLikesCount() {
+        return likes.size();
     }
 
-    @Transient
-    public Article like(User user, boolean liked) {
-        if (liked && !articleLikes.contains(user)) {
-            articleLikes.add(user);
-        } else if (!liked && articleLikes.contains(user)) {
-            articleLikes.remove(user);
-        }
-
-        return this;
+    public int getViewsCount() {
+        return views.size();
     }
 }

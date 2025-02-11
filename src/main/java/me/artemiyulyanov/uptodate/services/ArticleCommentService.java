@@ -5,6 +5,7 @@ import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.minio.resources.ArticleCommentResourceManager;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.ArticleComment;
+import me.artemiyulyanov.uptodate.models.ArticleView;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.repositories.ArticleCommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +45,15 @@ public class ArticleCommentService implements ResourceService<ArticleCommentReso
 
     public List<ArticleComment> findByAuthor(User author) {
         return articleCommentRepository.findByAuthor(author);
+    }
+
+    public void editComment(Long id, String content, List<MultipartFile> resources) {
+        ArticleComment newArticleComment = articleCommentRepository.findById(id).get();
+
+        newArticleComment.setContent(content);
+        getResourceManager().updateResources(newArticleComment, resources);
+
+        articleCommentRepository.save(newArticleComment);
     }
 
     public void delete(ArticleComment comment) {
