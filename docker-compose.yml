@@ -35,6 +35,7 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data
+      - ./minio_cors.json:/root/.minio/minio_cors.json
     networks:
       - app-network
 

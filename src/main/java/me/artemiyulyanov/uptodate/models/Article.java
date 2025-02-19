@@ -6,8 +6,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.cglib.core.Local;
 
-import java.time.LocalDateTime;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,19 +26,17 @@ public class Article {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArticleView> views = new ArrayList<>();
-
-    private String heading, description;
-
-    @Column(columnDefinition = "LONGTEXT")
-    private String content;
+    private String heading, description, cover, content;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleComment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArticleView> views = new ArrayList<>();
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleLike> likes = new ArrayList<>();
@@ -51,8 +50,8 @@ public class Article {
     private Set<ArticleTopic> topics = new HashSet<>();
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"articles", "comments", "likes", "likedComments", "likedArticles"})
     private User author;
 
     public List<String> getLikedUsernames() {
@@ -60,6 +59,16 @@ public class Article {
                 .map(ArticleLike::getUser)
                 .map(User::getUsername)
                 .toList();
+    }
+
+    public List<Long> getCommentsIds() {
+        return comments.stream()
+                .map(ArticleComment::getId)
+                .toList();
+    }
+
+    public Long getAuthorId() {
+        return author.getId();
     }
 
     public int getLikesCount() {

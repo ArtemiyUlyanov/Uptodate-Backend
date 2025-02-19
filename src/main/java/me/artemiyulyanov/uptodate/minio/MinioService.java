@@ -31,11 +31,14 @@ public class MinioService {
         }
     }
 
-    public boolean uploadFile(String objectKey, MultipartFile file) {
-        if(amazonS3.doesObjectExist(bucket, objectKey)) return false;
+    public String uploadFile(String objectKey, MultipartFile file) {
+        if(amazonS3.doesObjectExist(bucket, objectKey)) deleteFile(objectKey);
 
         try (InputStream inputStream = file.getInputStream()) {
             long contentLength = file.getSize();
+            String contentType = file.getContentType();
+
+            System.out.println(contentType);
 
             PutObjectRequest putObjectRequest = new PutObjectRequest(
                     bucket,
@@ -43,12 +46,14 @@ public class MinioService {
                     inputStream,
                     new ObjectMetadata()
             );
+
+            putObjectRequest.getMetadata().setContentType(contentType);
             putObjectRequest.getMetadata().setContentLength(contentLength);
 
             amazonS3.putObject(putObjectRequest.withCannedAcl(CannedAccessControlList.PublicRead));
-            return true;
+            return amazonS3.getUrl(bucket, objectKey).toString().replace("http://minio:9000", "http://localhost:9000");
         } catch (IOException e) {
-            return false;
+            return null;
         }
     }
 

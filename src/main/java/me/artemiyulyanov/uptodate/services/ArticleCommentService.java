@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +40,10 @@ public class ArticleCommentService implements ResourceService<ArticleCommentReso
         return articleCommentRepository.findById(id);
     }
 
+    public List<ArticleComment> findAllById(List<Long> ids) {
+        return articleCommentRepository.findAllById(ids);
+    }
+
     public List<ArticleComment> findByArticle(Article article) {
         return articleCommentRepository.findByArticle(article);
     }
@@ -47,7 +52,19 @@ public class ArticleCommentService implements ResourceService<ArticleCommentReso
         return articleCommentRepository.findByAuthor(author);
     }
 
-    public void editComment(Long id, String content, List<MultipartFile> resources) {
+    public void create(String content, User author, Article article, List<MultipartFile> resources) {
+        ArticleComment comment = ArticleComment.builder()
+                .content(content)
+                .createdAt(LocalDateTime.now())
+                .author(author)
+                .article(article)
+                .build();
+
+        articleCommentRepository.save(comment);
+        getResourceManager().uploadResources(comment, resources);
+    }
+
+    public void edit(Long id, String content, List<MultipartFile> resources) {
         ArticleComment newArticleComment = articleCommentRepository.findById(id).get();
 
         newArticleComment.setContent(content);

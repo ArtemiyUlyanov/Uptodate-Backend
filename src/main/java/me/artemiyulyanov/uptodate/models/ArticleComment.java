@@ -10,7 +10,10 @@ import me.artemiyulyanov.uptodate.services.ArticleCommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,8 +34,8 @@ public class ArticleComment {
     private Long id;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "article_id", nullable = false)
-    @JsonIgnoreProperties({"author", "comments", "likes", "views"})
     private Article article;
 
     @Transient
@@ -49,12 +52,12 @@ public class ArticleComment {
             joinColumns = @JoinColumn(name = "comment_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    @JsonIgnoreProperties({"articles", "comments", "likes", "likedComments", "likedArticles"})
-    private Set<User> articleCommentLikes = new HashSet<>();
+    @JsonIgnore
+    private Set<User> likes = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"articles", "comments", "likes", "likedComments", "likedArticles"})
+    @JsonIgnore
     private User author;
 
     @PostLoad
@@ -64,16 +67,32 @@ public class ArticleComment {
         }
     }
 
+    public Long getArticleId() {
+        return article.getId();
+    }
+
+    public Long getAuthorId() {
+        return author.getId();
+    }
+
+    public List<Long> getLikedUsersIds() {
+        return likes.stream()
+                .map(User::getId)
+                .toList();
+    }
+
     public List<String> getLikedUsernames() {
-        return articleCommentLikes.stream().map(User::getUsername).toList();
+        return likes.stream()
+                .map(User::getUsername)
+                .toList();
     }
 
     @Transient
     public ArticleComment like(User user) {
-        if (!articleCommentLikes.contains(user)) {
-            articleCommentLikes.add(user);
+        if (!likes.contains(user)) {
+            likes.add(user);
         } else {
-            articleCommentLikes.remove(user);
+            likes.remove(user);
         }
 
         return this;

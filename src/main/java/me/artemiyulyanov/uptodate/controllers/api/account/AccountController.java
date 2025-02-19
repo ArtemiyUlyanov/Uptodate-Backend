@@ -1,10 +1,11 @@
 package me.artemiyulyanov.uptodate.controllers.api.account;
 
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
-import me.artemiyulyanov.uptodate.controllers.api.account.responses.StatisticsResponse;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.User;
+import me.artemiyulyanov.uptodate.models.UserSettings;
 import me.artemiyulyanov.uptodate.repositories.ArticleLikeRepository;
+import me.artemiyulyanov.uptodate.repositories.UserSettingsRepository;
 import me.artemiyulyanov.uptodate.services.ArticleLikeService;
 import me.artemiyulyanov.uptodate.services.ArticleViewService;
 import me.artemiyulyanov.uptodate.services.UserService;
@@ -41,27 +42,22 @@ public class AccountController extends AuthenticatedController {
     @Autowired
     private RequestService requestService;
 
-    @GetMapping("/info")
-    public ResponseEntity<?> accountInfo() {
+    @Autowired
+    private UserSettingsRepository userSettingsRepository;
+
+    @GetMapping
+    public ResponseEntity<?> getInfo() {
         Optional<User> wrappedUser = getAuthorizedUser();
         return requestService.executeEntityResponse(HttpStatus.OK, "The user information has been retrieved successfully!", wrappedUser.get());
     }
 
-    @GetMapping("/info/statistics")
-    public ResponseEntity<?> statistics() {
+    @GetMapping("/statistics")
+    public ResponseEntity<?> getStatistics() {
         Optional<User> wrappedUser = getAuthorizedUser();
-
-        return requestService.executeCustomResponse(
-                StatisticsResponse.builder()
-                        .status(HttpStatus.OK.value())
-                        .lastViews(articleViewService.findLastViewsOfAuthor(wrappedUser.get(), LocalDateTime.now().minusDays(1)))
-                        .lastLikes(articleLikeService.findLastLikesOfAuthor(wrappedUser.get(), LocalDateTime.now().minusDays(1)))
-                        .message("The statistics has been retrieved successfully!")
-                        .build()
-        );
+        return requestService.executeEntityResponse(HttpStatus.OK, "The statistics has been retrieved successfully!", wrappedUser.get().getStatistics());
     }
 
-    @PutMapping("/edit")
+    @PutMapping
     public ResponseEntity<?> editAccount(
             @RequestParam String username,
             @RequestParam String firstName,
@@ -77,7 +73,7 @@ public class AccountController extends AuthenticatedController {
         return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
     }
 
-    @PostMapping("/icon/upload")
+    @PutMapping("/icon")
     public ResponseEntity<?> uploadIcon(@RequestParam(value = "icon") MultipartFile icon) {
         User user = getAuthorizedUser().get();
         System.out.println("test");
@@ -89,5 +85,23 @@ public class AccountController extends AuthenticatedController {
         userService.save(user);
 
         return requestService.executeApiResponse(HttpStatus.OK, "The icon has been updated successfully!");
+    }
+
+    @GetMapping("/settings")
+    public ResponseEntity<?> getSettings() {
+        User user = getAuthorizedUser().get();
+        return requestService.executeEntityResponse(HttpStatus.OK, "The settings have been retrieved successfully!", user.getSettings());
+    }
+
+    @PutMapping("/settings")
+    public ResponseEntity<?> editSettings(@RequestBody UserSettings settings) {
+        User user = getAuthorizedUser().get();
+
+        if (settings.getId().equals(user.getId())) {
+            return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "You are unable of editing these settings!");
+        }
+
+        userSettingsRepository.save(settings);
+        return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
     }
 }

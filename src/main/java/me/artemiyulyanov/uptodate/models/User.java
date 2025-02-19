@@ -32,23 +32,56 @@ public class User {
     private String firstName, lastName, icon;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ArticleLike> likes = new HashSet<>();
+    private Set<ArticleLike> likedArticles = new HashSet<>();
 
-    @ManyToMany(mappedBy = "articleCommentLikes")
+    @JsonIgnore // a new Uptodate data approaching update
+    @ManyToMany(mappedBy = "likes")
     private Set<ArticleComment> likedComments = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<Role> roles;
 
+    @JsonIgnore // a new Uptodate data approaching update
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Article> articles = new ArrayList<>();
 
+    @JsonIgnore // a new Uptodate data approaching update
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleComment> comments = new ArrayList<>();
 
-    public List<Article> getLikedArticles() {
-        return likes.stream()
-                .map(ArticleLike::getArticle)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserSettings settings;
+
+    @PostLoad
+    public void init() {
+        if (settings == null) {
+            this.settings = UserSettings.getDefaultSettings(this);
+        }
+    }
+
+    @JsonIgnore
+    @Transient
+    public UserStatistics getStatistics() {
+        return UserStatistics.builder()
+                .user(this)
+                .build();
+    }
+
+    public List<Long> getLikedCommentsIds() {
+        return likedComments.stream()
+                .map(ArticleComment::getId)
+                .toList();
+    }
+
+    public List<Long> getArticlesIds() {
+        return articles.stream()
+                .map(Article::getId)
+                .toList();
+    }
+
+    public List<Long> getCommentsIds() {
+        return comments.stream()
+                .map(ArticleComment::getId)
                 .toList();
     }
 }

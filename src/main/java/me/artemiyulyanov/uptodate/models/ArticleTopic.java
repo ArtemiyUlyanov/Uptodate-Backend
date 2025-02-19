@@ -21,9 +21,6 @@ public class ArticleTopic {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Transient
-    private int count;
-
     @Convert(converter = TranslativeStringConvertor.class)
     private TranslativeString parent;
 

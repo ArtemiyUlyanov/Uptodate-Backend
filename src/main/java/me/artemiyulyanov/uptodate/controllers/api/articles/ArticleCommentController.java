@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/articles/comments")
+@RequestMapping("/api/comments")
 public class ArticleCommentController extends AuthenticatedController {
     @Autowired
     private ArticleService articleService;
@@ -45,20 +46,26 @@ public class ArticleCommentController extends AuthenticatedController {
     @Autowired
     private RequestService requestService;
 
-    @GetMapping(value = "/get", params = {"id"})
-    public ResponseEntity<?> getCommentById(@RequestParam Long id) {
+    @GetMapping
+    public ResponseEntity<?> getCommentsByIds(@RequestParam(defaultValue = "", required = false) List<Long> ids) {
+        List<ArticleComment> comments = articleCommentService.findAllById(ids);
+        return requestService.executeEntityResponse(HttpStatus.OK, "The comments have been retrieved successfully!", comments);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCommentById(@PathVariable Long id) {
         Optional<ArticleComment> articleComment = articleCommentService.findById(id);
 
         if (articleComment.isEmpty()) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Comment is undefined!");
         }
 
-        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", articleComment.get());
+        return requestService.executeEntityResponse(HttpStatus.OK, "The comment has been retrieved successfully!", articleComment.get());
     }
 
-    @GetMapping(value = "/get", params = {"authorId"})
-    public ResponseEntity<?> getCommentsByAuthor(@RequestParam Long authorId) {
-        Optional<User> wrappedAuthor = userService.findById(authorId);
+    @GetMapping("/author/{id}")
+    public ResponseEntity<?> getCommentsByAuthor(@PathVariable Long id) {
+        Optional<User> wrappedAuthor = userService.findById(id);
 
         if (!wrappedAuthor.isPresent()) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Author is undefined!");
@@ -68,9 +75,9 @@ public class ArticleCommentController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", articleComments);
     }
 
-    @GetMapping(value = "/get", params = {"articleId"})
-    public ResponseEntity<?> getCommentsByArticle(@RequestParam Long articleId, Model model) {
-        Optional<Article> wrappedArticle = articleService.findById(articleId);
+    @GetMapping("/article/{id}")
+    public ResponseEntity<?> getCommentsByArticle(@PathVariable Long id) {
+        Optional<Article> wrappedArticle = articleService.findById(id);
 
         if (!wrappedArticle.isPresent()) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Comment is undefined!");
@@ -80,7 +87,7 @@ public class ArticleCommentController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", articleComments);
     }
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<?> createComment(
             @RequestParam String content,
             @RequestParam Long articleId,
@@ -92,22 +99,13 @@ public class ArticleCommentController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The article is undefined");
         }
 
-        ArticleComment comment = ArticleComment.builder()
-                .content(content)
-                .createdAt(LocalDateTime.now())
-                .author(wrappedUser.get())
-                .article(wrappedArticle.get())
-                .build();
-        articleCommentService.save(comment);
-
-        articleCommentService.getResourceManager().uploadResources(comment, resources);
-
+        articleCommentService.create(content, wrappedUser.get(), wrappedArticle.get(), resources);
         return requestService.executeApiResponse(HttpStatus.OK, "The comment has been created!");
     }
 
-    @PutMapping("/edit")
+    @PutMapping("/{id}")
     public ResponseEntity<?> editComment(
-            @RequestParam Long id,
+            @PathVariable Long id,
             @RequestParam String content,
             @RequestParam(value = "resources", required = false) List<MultipartFile> resources) {
         Optional<User> wrappedUser = getAuthorizedUser();
@@ -122,28 +120,12 @@ public class ArticleCommentController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the changes!");
         }
 
-        articleCommentService.editComment(id, content, resources);
+        articleCommentService.edit(id, content, resources);
         return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
     }
 
-    @PostMapping("/like")
-    public ResponseEntity<?> likeComment(@RequestParam Long id) {
-        Optional<User> wrappedUser = getAuthorizedUser();
-
-        Optional<ArticleComment> wrappedArticleComment = articleCommentService.findById(id);
-        if (wrappedArticleComment.isEmpty()) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The comment is undefined!");
-        }
-
-        ArticleComment newArticleComment = wrappedArticleComment.get();
-        newArticleComment.like(wrappedUser.get());
-        articleCommentService.save(newArticleComment);
-
-        return requestService.executeApiResponse(HttpStatus.OK, "The comment has been liked by the user successfully!");
-    }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteComment(@RequestParam Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteComment(@PathVariable Long id) {
         Optional<User> wrappedUser = getAuthorizedUser();
         Optional<ArticleComment> wrappedArticleComment = articleCommentService.findById(id);
 
@@ -158,5 +140,21 @@ public class ArticleCommentController extends AuthenticatedController {
 
         articleCommentService.delete(comment);
         return requestService.executeApiResponse(HttpStatus.OK, "The removal has been processed successfully!");
+    }
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<?> likeComment(@PathVariable Long id) {
+        Optional<User> wrappedUser = getAuthorizedUser();
+
+        Optional<ArticleComment> wrappedArticleComment = articleCommentService.findById(id);
+        if (wrappedArticleComment.isEmpty()) {
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The comment is undefined!");
+        }
+
+        ArticleComment newArticleComment = wrappedArticleComment.get();
+        newArticleComment.like(wrappedUser.get());
+        articleCommentService.save(newArticleComment);
+
+        return requestService.executeApiResponse(HttpStatus.OK, "The comment has been liked by the user successfully!");
     }
 }

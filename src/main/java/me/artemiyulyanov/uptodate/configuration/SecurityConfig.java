@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -35,7 +36,11 @@ public class SecurityConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/swagger-ui", "/v3/api-docs", "/api/users/get", "/api/articles/retrieve", "/api/articles/get", "/api/articles/comments/get", "/api/articles/search", "/api/articles/topics/**", "/api/files/get").permitAll()
+                        .requestMatchers("/swagger-ui", "/v3/api-docs").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/{id}", "/api/articles/search", "/api/articles/retrieve").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/comments", "/api/comments/{id}", "/api/comments/author/{id}", "/api/comments/article/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/{id}").permitAll()
+                        .requestMatchers("/api/topics").permitAll()
                         .requestMatchers("/api/auth/**").anonymous()
                         .requestMatchers("/api/auth/refresh").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

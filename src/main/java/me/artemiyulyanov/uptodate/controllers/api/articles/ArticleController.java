@@ -43,6 +43,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/articles")
@@ -70,8 +71,14 @@ public class ArticleController extends AuthenticatedController {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @GetMapping(value = "/get", params = {"id"})
-    public ResponseEntity<?> getArticleById(@RequestParam Long id) {
+    @GetMapping
+    public ResponseEntity<?> getArticlesByIds(@RequestParam(defaultValue = "", required = false) List<Long> ids) {
+        List<Article> articles = articleService.findAllById(ids);
+        return requestService.executeEntityResponse(HttpStatus.OK, "The articles have been retrieved successfully!", articles);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getArticleById(@PathVariable Long id) {
         Optional<Article> wrappedArticle = articleService.findById(id);
 
         if (wrappedArticle.isEmpty()) {
@@ -81,45 +88,90 @@ public class ArticleController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", wrappedArticle.get());
     }
 
-    @GetMapping(value = "/get", params = {"authorId"})
-    public ResponseEntity<?> getArticlesByAuthor(@RequestParam Long authorId) {
-        Optional<User> wrappedAuthor = userService.findById(authorId);
+    @PostMapping("/{id}/like")
+    public ResponseEntity<?> likeArticle(@PathVariable Long id, Model model) {
+        Optional<User> wrappedUser = getAuthorizedUser();
 
-        if (wrappedAuthor.isEmpty()) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "User is undefined!");
+        Optional<Article> wrappedArticle = articleService.findById(id);
+        if (wrappedArticle.isEmpty()) {
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The article is undefined!");
         }
 
-        List<Article> articles = articleService.findByAuthor(wrappedAuthor.get());
-        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", articles);
+        articleLikeService.like(wrappedArticle.get(), wrappedUser.get());
+        return requestService.executeApiResponse(HttpStatus.OK, "The article has been liked by the user successfully!");
     }
 
-    @GetMapping("/retrieve")
-    public ResponseEntity<?> retrieveArticle(
-            @RequestParam(value = "heading") String heading,
-            @RequestParam(value = "createdAt") String createdAtString) {
-        Date date;
+    @PostMapping
+    public ResponseEntity<?> createArticle(
+            @RequestParam String heading,
+            @RequestParam String description,
+            @RequestParam String content,
+            @RequestParam List<String> topicsNames,
+            @RequestParam MultipartFile cover,
+            @RequestParam(required = false) List<MultipartFile> resources) {
+        Optional<User> wrappedUser = getAuthorizedUser();
 
-        try {
-            date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(createdAtString);
-        } catch (ParseException e) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The date is wrong!");
+        if (resources == null) {
+            resources = Collections.emptyList();
         }
 
-        Optional<Article> wrappedArticle = articleService.findByDateAndHeadingContaining(date, heading);
+        if (!articleService.create(wrappedUser.get(), heading, description, content, topicsNames, cover, resources)) {
+            return requestService.executeApiResponse(HttpStatus.EXPECTATION_FAILED, "Unable to create article!");
+        }
+
+        return requestService.executeApiResponse(HttpStatus.OK, "The article has been created!");
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editArticle(
+            @PathVariable Long id,
+            @RequestParam String heading,
+            @RequestParam String description,
+            @RequestParam String content,
+            @RequestParam List<String> topicsNames,
+            @RequestParam MultipartFile cover,
+            @RequestParam(required = false) List<MultipartFile> resources) {
+        Optional<User> wrappedUser = getAuthorizedUser();
+        Optional<Article> wrappedArticle = articleService.findById(id);
 
         if (wrappedArticle.isEmpty()) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
         }
 
-        articleViewService.view(wrappedArticle.get(), getAuthorizedUser().orElse(null));
-        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", wrappedArticle.get());
+        Article newArticle = wrappedArticle.get();
+        if (!newArticle.getAuthor().getId().equals(wrappedUser.get().getId())) {
+            return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the changes!");
+        }
+
+        if (!articleService.edit(id, heading, description, content, topicsNames, cover, resources)) {
+            return requestService.executeApiResponse(HttpStatus.EXPECTATION_FAILED, "Unable to edit article!");
+        }
+
+        return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteArticle(@PathVariable Long id) {
+        Optional<User> wrappedUser = getAuthorizedUser();
+        Optional<Article> wrappedArticle = articleService.findById(id);
+
+        if (wrappedArticle.isEmpty()) {
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
+        }
+
+        Article article = wrappedArticle.get();
+        if (!article.getAuthor().getId().equals(wrappedUser.get().getId())) {
+            return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the removal!");
+        }
+
+        articleService.delete(article);
+        return requestService.executeApiResponse(HttpStatus.OK, "The removal has been processed successfully!");
     }
 
     @GetMapping("/search")
     public ResponseEntity<?> searchArticles(
             @RequestParam(defaultValue = "1", required = false) Integer page,
-            @RequestParam(required = false) Integer pagesCount,
-            @RequestParam(required = false) Integer count,
+            @RequestParam(required = false) Integer pages,
             @RequestParam String query,
             @RequestParam(value = "filters") String filtersRow) throws JsonProcessingException, UnsupportedEncodingException {
         HashMap<String, Object> filters = objectMapper.readValue(URLDecoder.decode(filtersRow, "UTF-8"), new TypeReference<>() {});
@@ -127,10 +179,8 @@ public class ArticleController extends AuthenticatedController {
 
         PageableObject<Article> pageableObject;
 
-        if (count != null) {
-            pageableObject = PageableObject.of(Article.class, 0, count);
-        } else if (pagesCount != null) {
-            pageableObject = PageableObject.of(Article.class, 0, pagesCount * ARTICLE_PAGE_SIZE);
+        if (pages != null) {
+            pageableObject = PageableObject.of(Article.class, 0, pages * ARTICLE_PAGE_SIZE);
         } else {
             pageableObject = PageableObject.of(Article.class, page - 1, ARTICLE_PAGE_SIZE);
         }
@@ -145,94 +195,25 @@ public class ArticleController extends AuthenticatedController {
         return requestService.executePaginatedEntityResponse(HttpStatus.OK, paginatedArticles);
     }
 
-    @PostMapping("/like")
-    public ResponseEntity<?> likeArticle(@RequestParam Long id, Model model) {
-        Optional<User> wrappedUser = getAuthorizedUser();
+    @GetMapping("/retrieve")
+    public ResponseEntity<?> retrieveArticle(
+            @RequestParam(value = "heading") String heading,
+            @RequestParam(value = "createdAt") String createdAtString) {
+        Date date;
 
-        Optional<Article> wrappedArticle = articleService.findById(id);
-        if (wrappedArticle.isEmpty()) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The article is undefined!");
+        try {
+            date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(createdAtString);
+        } catch (ParseException e) {
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The date is wrong!");
         }
 
-        articleLikeService.like(wrappedArticle.get(), wrappedUser.get());
-        return requestService.executeApiResponse(HttpStatus.OK, "The article has been liked by the user successfully!");
-    }
-
-    @PostMapping("/create")
-    public ResponseEntity<?> createArticle(
-            @RequestParam String heading,
-            @RequestParam String description,
-            @RequestParam String content,
-            @RequestParam List<String> topicsNames,
-            @RequestParam(value = "resources", required = false) List<MultipartFile> resources) {
-        Optional<User> wrappedUser = getAuthorizedUser();
-
-        Set<ArticleTopic> topics = topicsNames.stream()
-                        .map(articleTopicService::findByName)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toSet());
-
-        Article article = Article.builder()
-                        .heading(heading)
-                        .description(description)
-                        .content(content)
-                        .topics(topics)
-                        .createdAt(LocalDateTime.now())
-                        .author(wrappedUser.get())
-                        .build();
-
-        articleService.save(article);
-        if (resources != null) {
-            articleService.getResourceManager().uploadResources(article, resources);
-        }
-
-        return requestService.executeApiResponse(HttpStatus.OK, "The article has been created!");
-    }
-
-    @PutMapping("/edit")
-    public ResponseEntity<?> editArticle(
-            @RequestParam Long id,
-            @RequestParam String heading,
-            @RequestParam String description,
-            @RequestParam String content,
-            @RequestParam List<String> topicsNames,
-            @RequestParam(value = "newFiles", required = false) List<MultipartFile> newFiles) {
-        Optional<User> wrappedUser = getAuthorizedUser();
-        Optional<Article> wrappedArticle = articleService.findById(id);
+        Optional<Article> wrappedArticle = articleService.findByDateAndHeading(date, heading);
 
         if (wrappedArticle.isEmpty()) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
         }
 
-        Article newArticle = wrappedArticle.get();
-        if (!newArticle.getAuthor().getId().equals(wrappedUser.get().getId())) {
-            return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the changes!");
-        }
-
-        articleService.editArticle(id, heading, description, content, topicsNames, newFiles);
-        return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
-    }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteArticle(@RequestParam Long id) {
-        Optional<User> wrappedUser = getAuthorizedUser();
-        Optional<Article> wrappedArticle = articleService.findById(id);
-
-//        if (!isUserAuthorized()) {
-//            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, 10, "The authorized user is undefined!");
-//        }
-
-        if (wrappedArticle.isEmpty()) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
-        }
-
-        Article article = wrappedArticle.get();
-        if (!article.getAuthor().getId().equals(wrappedUser.get().getId())) {
-            return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the removal!");
-        }
-
-        articleService.delete(article);
-        return requestService.executeApiResponse(HttpStatus.OK, "The removal has been processed successfully!");
+        articleViewService.view(wrappedArticle.get(), getAuthorizedUser().orElse(null));
+        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", wrappedArticle.get());
     }
 }

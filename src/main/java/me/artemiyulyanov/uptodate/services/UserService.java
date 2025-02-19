@@ -87,6 +87,10 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         return userRepository.findById(id);
     }
 
+    public List<User> findAllById(List<Long> ids) {
+        return userRepository.findAllById(ids);
+    }
+
     public void createNewUser(User user) {
         Role basicRole = roleService.findRoleByName("USER");
         user.setRoles(Set.of(basicRole));

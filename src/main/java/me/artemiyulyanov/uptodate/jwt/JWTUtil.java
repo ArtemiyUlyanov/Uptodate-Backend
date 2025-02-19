@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class JWTUtil {
-    public static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 15; // 15 minutes is an expiration timeline for access token
+    public static final long ACCESS_TOKEN_EXPIRATION = 1000 * 3600 * 24; // 15 minutes is an expiration timeline for access token
     public static final long REFRESH_TOKEN_EXPIRATION = 1000 * 3600 * 24; // 24 hours is an expiration timeline for refresh token
     public static final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 

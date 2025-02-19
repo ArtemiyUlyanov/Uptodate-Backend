@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -27,20 +30,24 @@ public class UserResourceManager implements ResourceManager<User> {
     private UserRepository userRepository;
 
     @Override
-    public void uploadResources(User user, List<MultipartFile> files) {
+    public List<String> uploadResources(User user, List<MultipartFile> files) {
         MultipartFile icon = files.get(0);
 
         if (icon != null) {
             String iconObjectKey = getResourceFolder(user) + File.separator + icon.getOriginalFilename();
-            minioService.uploadFile(iconObjectKey, icon);
+            String url = minioService.uploadFile(iconObjectKey, icon);
 
-            user.setIcon(iconObjectKey);
+            user.setIcon(url);
             userRepository.save(user);
+
+            return List.of(url);
         }
+
+        return Collections.emptyList();
     }
 
     @Override
-    public void updateResources(User user, List<MultipartFile> files) {
+    public List<String> updateResources(User user, List<MultipartFile> files) {
         deleteResources(user);
         MultipartFile icon = files.get(0);
 
@@ -48,6 +55,13 @@ public class UserResourceManager implements ResourceManager<User> {
             String iconObjectKey = getResourceFolder(user) + File.separator + icon.getOriginalFilename();
             minioService.uploadFile(iconObjectKey, icon);
         }
+
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void deleteResources(User user, List<String> filesNames) {
+        filesNames.forEach(fileName -> minioService.deleteFile(getResourceFolder(user) + File.separator + fileName));
     }
 
     @Override

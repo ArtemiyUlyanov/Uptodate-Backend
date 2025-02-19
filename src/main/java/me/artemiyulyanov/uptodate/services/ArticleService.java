@@ -1,11 +1,13 @@
 package me.artemiyulyanov.uptodate.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.minio.resources.ArticleResourceManager;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.ArticleTopic;
+import me.artemiyulyanov.uptodate.models.ContentBlock;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.repositories.ArticleRepository;
 import me.artemiyulyanov.uptodate.web.PageableObject;
@@ -17,9 +19,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ArticleService implements ResourceService<ArticleResourceManager> {
@@ -40,58 +45,16 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @PostConstruct
-    @Lazy
-    public void init() {
-        if (articleRepository.count() > 0) return;
-
-        ArticleTopic topic1 = articleTopicService.findByName("Cultural Travel").get();
-        ArticleTopic topic2 = articleTopicService.findByName("Luxury Travel").get();
-
-        ArticleTopic topic3 = articleTopicService.findByName("Blockchain").get();
-        ArticleTopic topic4 = articleTopicService.findByName("Cloud Computing").get();
-
-        ArticleTopic topic5 = articleTopicService.findByName("Fashion & Style").get();
-
-        User author = userService.findByUsername("artemiyulyanov2008").get();
-        Article article1 = Article.builder()
-                .author(author)
-                .heading("No longer unavailable — widely-distributed famous fashion brands appear in Shanghai’s streets")
-                .description("The recent surge of globally renowned fashion brands establishing a strong presence in Shanghai’s retail scene.")
-                .content("The content of the article #1")
-                .topics(Set.of(topic1, topic2))
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        Article article2 = Article.builder()
-                .author(author)
-                .heading("Top 10 places to visit in Amsterdam — the last one is the most wondering")
-                .description("The top 10 must-visit locations in Amsterdam, showcasing the city’s iconic canals, historical landmarks, and vibrant cultural spots.")
-                .content("The content of the article #2")
-                .topics(Set.of(topic3, topic4))
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        Article article3 = Article.builder()
-                .author(author)
-                .heading("The future is up to you — the programming languages to be demanded in 2024")
-                .description("The programming languages predicted to be in high demand in 2024, as technology continues to evolve at a rapid pace.")
-                .content("The content of the article #3")
-                .topics(Set.of(topic5))
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        articleRepository.save(article1);
-        articleRepository.save(article2);
-        articleRepository.save(article3);
-    }
-
     public long count() {
         return articleRepository.count();
     }
 
     public List<Article> findAllArticles(Sort sort) {
         return articleRepository.findAll(sort);
+    }
+
+    public List<Article> findAllById(List<Long> ids) {
+        return articleRepository.findAllById(ids);
     }
 
     public Page<Article> findAllArticles(PageableObject<Article> pageableObject) {
@@ -106,33 +69,65 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         return articleRepository.findById(id);
     }
 
-    public Optional<Article> findByDateAndHeadingContaining(Date date, String heading) {
-        return articleRepository.findByDateAndHeadingContaining(date, heading).stream().findFirst();
+    public Optional<Article> findByDateAndHeading(Date createdAt, String heading) {
+        return articleRepository.findByDateAndHeading(createdAt, heading).stream().findFirst();
     }
 
     public List<Article> findByAuthor(User author) {
         return articleRepository.findByAuthor(author);
     }
 
-//    public List<Article> findByAuthorAfterDate(User author, LocalDateTime after) {
-//        return articleRepository.findArticlesByAuthorAfterDate(author, after);
-//    }
+    public boolean create(User author, String heading, String description, String content, List<String> topicsNames, MultipartFile cover, List<MultipartFile> resources) {
+        try {
+            Set<ArticleTopic> topics = topicsNames.stream()
+                    .map(articleTopicService::findByName)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
 
-    public void editArticle(Long id, String heading, String description, String content, List<String> topicsNames, List<MultipartFile> newFiles) {
-        Article newArticle = articleRepository.findById(id).get();
-        Set<ArticleTopic> topics = topicsNames.stream()
-                .map(articleTopicService::findByName)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toSet());
+            Article article = Article.builder()
+                    .heading(heading)
+                    .description(description)
+                    .content(content)
+                    .topics(topics)
+                    .createdAt(LocalDateTime.now())
+                    .author(author)
+                    .build();
 
-        newArticle.setHeading(heading);
-        newArticle.setDescription(description);
-        newArticle.setContent(content);
-        newArticle.setTopics(topics);
-        getResourceManager().updateResources(newArticle, newFiles);
+            articleRepository.save(article);
 
-        articleRepository.save(newArticle);
+            getResourceManager().uploadContent(article, resources);
+            getResourceManager().uploadCover(article, cover);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean edit(Long id, String heading, String description, String content, List<String> topicsNames, MultipartFile cover, List<MultipartFile> resources) {
+        try {
+            Article newArticle = articleRepository.findById(id).get();
+            Set<ArticleTopic> topics = topicsNames.stream()
+                    .map(articleTopicService::findByName)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
+
+            newArticle.setHeading(heading);
+            newArticle.setDescription(description);
+            newArticle.setContent(content);
+            newArticle.setTopics(topics);
+
+            articleRepository.save(newArticle);
+
+            getResourceManager().uploadContent(newArticle, resources);
+            getResourceManager().uploadCover(newArticle, cover);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public void deleteById(Long id) {
@@ -152,6 +147,7 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
     public ArticleResourceManager getResourceManager() {
         return ArticleResourceManager
                 .builder()
+                .articleRepository(articleRepository)
                 .minioService(minioService)
                 .build();
     }

@@ -6,7 +6,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(
@@ -30,9 +33,17 @@ public class ArticleLike {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({"articles", "comments", "likes", "likedComments", "likedArticles"})
+    @JsonIgnore
     private User user;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime likedAt;
+
+    public Long getArticleId() {
+        return article.getId();
+    }
+
+    public Long getUserId() {
+        return user.getId();
+    }
 }
