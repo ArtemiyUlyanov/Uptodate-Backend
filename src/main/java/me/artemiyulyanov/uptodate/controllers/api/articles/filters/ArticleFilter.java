@@ -20,13 +20,13 @@ public abstract class ArticleFilter<T> {
     private T value;
 
     enum ArticleFilterType {
-        QUERY, TOPICS, SORT_BY;
+        QUERY, CATEGORIES, SORT_BY;
     }
 
     public abstract PageableObject<Article> applyFilter(PageableObject<Article> pageableObject);
 
     public static ArticleFilter of(String type, Object value) {
-        if (ArticleFilterType.valueOf(type) == ArticleFilterType.TOPICS) {
+        if (ArticleFilterType.valueOf(type) == ArticleFilterType.CATEGORIES) {
             return ArticleTopicsFilter.builder()
                     .type(ArticleFilterType.valueOf(type))
                     .value((List<String>) value)

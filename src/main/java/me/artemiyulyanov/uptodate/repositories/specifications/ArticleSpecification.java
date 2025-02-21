@@ -3,31 +3,29 @@ package me.artemiyulyanov.uptodate.repositories.specifications;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import me.artemiyulyanov.uptodate.models.Article;
-import me.artemiyulyanov.uptodate.models.ArticleTopic;
+import me.artemiyulyanov.uptodate.models.Category;
 import me.artemiyulyanov.uptodate.models.User;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ArticleSpecification {
-    public static Specification<Article> filterByTopics(List<String> topics) {
+    public static Specification<Article> filterByTopics(List<String> categories) {
         return (root, q, criteriaBuilder) -> {
-            if (topics == null || topics.isEmpty()) {
+            if (categories == null || categories.isEmpty()) {
                 return criteriaBuilder.conjunction();
             }
 
-            Join<Article, ArticleTopic> topicsJoin = root.join("topics");
+            Join<Article, Category> categoriesJoin = root.join("categories");
 
-            List<Predicate> predicates = topics.stream()
-                    .map(topic -> criteriaBuilder.or(
+            List<Predicate> predicates = categories.stream()
+                    .map(category -> criteriaBuilder.or(
                             criteriaBuilder.equal(criteriaBuilder.function("JSON_UNQUOTE", String.class,
                                     criteriaBuilder.function("JSON_EXTRACT", String.class,
-                                            topicsJoin.get("name"), criteriaBuilder.literal("$.english"))), topic),
+                                            categoriesJoin.get("name"), criteriaBuilder.literal("$.english"))), category),
                             criteriaBuilder.equal(criteriaBuilder.function("JSON_UNQUOTE", String.class,
                                     criteriaBuilder.function("JSON_EXTRACT", String.class,
-                                            topicsJoin.get("name"), criteriaBuilder.literal("$.russian"))), topic)
+                                            categoriesJoin.get("name"), criteriaBuilder.literal("$.russian"))), category)
                     ))
                     .toList();
 

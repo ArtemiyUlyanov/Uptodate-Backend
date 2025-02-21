@@ -2,17 +2,14 @@ package me.artemiyulyanov.uptodate.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.boot.context.properties.bind.DefaultValue;
-import org.springframework.cglib.core.Local;
+import me.artemiyulyanov.uptodate.repositories.UserRepository;
+import me.artemiyulyanov.uptodate.services.UserService;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "articles")
@@ -22,18 +19,24 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Article {
+    @Setter
+    private static UserService userService;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String heading, description, cover, content;
+    private String heading, description, cover;
+
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ContentBlock> content;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
     @JsonIgnore
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArticleComment> comments = new ArrayList<>();
+    private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleView> views = new ArrayList<>();
@@ -43,16 +46,27 @@ public class Article {
 
     @ManyToMany
     @JoinTable(
-            name = "articles_topics",
+            name = "articles_categories",
             joinColumns = @JoinColumn(name = "article_id"),
-            inverseJoinColumns = @JoinColumn(name = "topic_id")
+            inverseJoinColumns = @JoinColumn(name = "category_id")
     )
-    private Set<ArticleTopic> topics = new HashSet<>();
+    private Set<Category> categories = new HashSet<>();
 
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "user_id", nullable = false)
     private User author;
+
+    @Transient
+    private List<PermissionScope> permissionScope = new ArrayList<>();
+
+    @PostLoad
+    public void init() {
+        if (userService != null) {
+            User wrappedUser = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
+            this.permissionScope = definePermissionScopeFor(this, wrappedUser);
+        }
+    }
 
     public List<String> getLikedUsernames() {
         return likes.stream()
@@ -63,7 +77,7 @@ public class Article {
 
     public List<Long> getCommentsIds() {
         return comments.stream()
-                .map(ArticleComment::getId)
+                .map(Comment::getId)
                 .toList();
     }
 
@@ -77,5 +91,12 @@ public class Article {
 
     public int getViewsCount() {
         return views.size();
+    }
+
+    public static List<PermissionScope> definePermissionScopeFor(Article article, User user) {
+        if (user == null) return Collections.emptyList();
+        if (user.getRolesNames().contains("ADMIN") || user.getId() == article.getAuthor().getId()) return List.of(PermissionScope.EDIT, PermissionScope.DELETE);
+
+        return Collections.emptyList();
     }
 }

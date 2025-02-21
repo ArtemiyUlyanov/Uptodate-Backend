@@ -15,12 +15,10 @@ import java.util.Optional;
 
 @Repository
 public interface ArticleLikeRepository extends JpaRepository<ArticleLike, Long> {
-    @Query("SELECT e FROM ArticleLike e WHERE e.article.author = :user AND e.likedAt >= :after")
-    List<ArticleLike> findLastLikesOfAuthor(@Param("user") User user, @Param("after") LocalDateTime after);
+    @Query("SELECT e FROM ArticleLike e WHERE e.article.author = :author AND e.likedAt >= :after")
+    List<ArticleLike> findLastLikesOfAuthor(@Param("author") User author, @Param("after") LocalDateTime after);
 
     Optional<ArticleLike> findByArticleAndUser(Article article, User user);
 
     boolean existsByArticleAndUser(Article article, User user);
-
-//    void deleteByArticleAndUser(Article article, User user);
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.models.Article;
+import me.artemiyulyanov.uptodate.models.ContentBlock;
 import me.artemiyulyanov.uptodate.repositories.ArticleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -81,16 +82,14 @@ public class ArticleResourceManager implements ResourceManager<Article> {
 
     public void uploadContent(Article article, List<MultipartFile> resources) throws Exception {
         AtomicInteger index = new AtomicInteger(0);
-        List<Map<String, String>> contentBlocks = objectMapper.readValue(article.getContent(), new TypeReference<>() {});
 
         List<String> resourceUrls = uploadResources(article, resources);
-
-        List<Map<String, String>> updatedContentBlocks = contentBlocks.stream()
-                .filter(contentBlock -> contentBlock.get("type").equals("image") && contentBlock.get("value").startsWith("file-"))
-                .peek(contentBlock -> contentBlock.put("value", resourceUrls.get(index.getAndIncrement())))
+        List<ContentBlock> updatedContentBlocks = article.getContent().stream()
+                .filter(contentBlock -> contentBlock.getType().equals("image") && contentBlock.getText().startsWith("file-"))
+                .peek(contentBlock -> contentBlock.setText(resourceUrls.get(index.getAndIncrement())))
                 .toList();
 
-        article.setContent(objectMapper.writeValueAsString(updatedContentBlocks));
+        article.setContent(updatedContentBlocks);
         articleRepository.save(article);
     }
 

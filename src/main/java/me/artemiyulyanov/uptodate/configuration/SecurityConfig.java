@@ -40,7 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/{id}", "/api/articles/search", "/api/articles/retrieve").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/comments", "/api/comments/{id}", "/api/comments/author/{id}", "/api/comments/article/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/{id}").permitAll()
-                        .requestMatchers("/api/topics").permitAll()
+                        .requestMatchers("/api/categories").permitAll()
                         .requestMatchers("/api/auth/**").anonymous()
                         .requestMatchers("/api/auth/refresh").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

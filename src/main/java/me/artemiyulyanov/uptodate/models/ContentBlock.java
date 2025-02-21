@@ -1,5 +1,6 @@
 package me.artemiyulyanov.uptodate.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +17,13 @@ public class ContentBlock {
     private Long id;
 
     @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "article_id", nullable = false)
     private Article article;
 
     private String type, text;
+
+    public Long getArticleId() {
+        return article.getId();
+    }
 }

@@ -3,15 +3,10 @@ package me.artemiyulyanov.uptodate.minio;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import jakarta.annotation.PostConstruct;
-import me.artemiyulyanov.uptodate.models.Article;
-import me.artemiyulyanov.uptodate.models.ArticleComment;
-import me.artemiyulyanov.uptodate.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -53,6 +48,7 @@ public class MinioService {
             amazonS3.putObject(putObjectRequest.withCannedAcl(CannedAccessControlList.PublicRead));
             return amazonS3.getUrl(bucket, objectKey).toString().replace("http://minio:9000", "http://localhost:9000");
         } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }

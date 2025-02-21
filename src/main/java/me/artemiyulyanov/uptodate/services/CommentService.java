@@ -2,33 +2,31 @@ package me.artemiyulyanov.uptodate.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.artemiyulyanov.uptodate.minio.MinioService;
-import me.artemiyulyanov.uptodate.minio.resources.ArticleCommentResourceManager;
+import me.artemiyulyanov.uptodate.minio.resources.CommentResourceManager;
 import me.artemiyulyanov.uptodate.models.Article;
-import me.artemiyulyanov.uptodate.models.ArticleComment;
-import me.artemiyulyanov.uptodate.models.ArticleView;
+import me.artemiyulyanov.uptodate.models.Comment;
 import me.artemiyulyanov.uptodate.models.User;
-import me.artemiyulyanov.uptodate.repositories.ArticleCommentRepository;
+import me.artemiyulyanov.uptodate.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class ArticleCommentService implements ResourceService<ArticleCommentResourceManager> {
+public class CommentService implements ResourceService<CommentResourceManager> {
     @Autowired
-    private ArticleCommentRepository articleCommentRepository;
+    private CommentRepository commentRepository;
 
     @Autowired
     @Lazy
     private UserService userService;
 
     @Autowired
-    private ArticleTopicService articleTopicService;
+    private CategoryService categoryService;
 
     @Autowired
     private MinioService minioService;
@@ -36,56 +34,58 @@ public class ArticleCommentService implements ResourceService<ArticleCommentReso
     @Autowired
     private ObjectMapper objectMapper;
 
-    public Optional<ArticleComment> findById(Long id) {
-        return articleCommentRepository.findById(id);
+    public Optional<Comment> findById(Long id) {
+        return commentRepository.findById(id);
     }
 
-    public List<ArticleComment> findAllById(List<Long> ids) {
-        return articleCommentRepository.findAllById(ids);
+    public List<Comment> findAllById(List<Long> ids) {
+        return commentRepository.findAllById(ids);
     }
 
-    public List<ArticleComment> findByArticle(Article article) {
-        return articleCommentRepository.findByArticle(article);
+    public List<Comment> findByArticle(Article article) {
+        return commentRepository.findByArticle(article);
     }
 
-    public List<ArticleComment> findByAuthor(User author) {
-        return articleCommentRepository.findByAuthor(author);
+    public List<Comment> findByAuthor(User author) {
+        return commentRepository.findByAuthor(author);
     }
 
     public void create(String content, User author, Article article, List<MultipartFile> resources) {
-        ArticleComment comment = ArticleComment.builder()
+        Comment comment = Comment.builder()
                 .content(content)
                 .createdAt(LocalDateTime.now())
                 .author(author)
                 .article(article)
                 .build();
 
-        articleCommentRepository.save(comment);
+        commentRepository.save(comment);
+
         getResourceManager().uploadResources(comment, resources);
     }
 
     public void edit(Long id, String content, List<MultipartFile> resources) {
-        ArticleComment newArticleComment = articleCommentRepository.findById(id).get();
+        Comment newComment = commentRepository.findById(id).get();
 
-        newArticleComment.setContent(content);
-        getResourceManager().updateResources(newArticleComment, resources);
+        newComment.setContent(content);
+        getResourceManager().updateResources(newComment, resources);
 
-        articleCommentRepository.save(newArticleComment);
+        commentRepository.save(newComment);
     }
 
-    public void delete(ArticleComment comment) {
+    public void delete(Comment comment) {
         getResourceManager().deleteResources(comment);
-        articleCommentRepository.delete(comment);
+        commentRepository.delete(comment);
     }
 
-    public void save(ArticleComment comment) {
-        articleCommentRepository.save(comment);
+    public void save(Comment comment) {
+        commentRepository.save(comment);
     }
 
     @Override
-    public ArticleCommentResourceManager getResourceManager() {
-        return ArticleCommentResourceManager
+    public CommentResourceManager getResourceManager() {
+        return CommentResourceManager
                 .builder()
+                .commentRepository(commentRepository)
                 .minioService(minioService)
                 .build();
     }

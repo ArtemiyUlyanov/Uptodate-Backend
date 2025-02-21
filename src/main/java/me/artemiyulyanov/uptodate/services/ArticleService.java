@@ -1,12 +1,10 @@
 package me.artemiyulyanov.uptodate.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.minio.resources.ArticleResourceManager;
 import me.artemiyulyanov.uptodate.models.Article;
-import me.artemiyulyanov.uptodate.models.ArticleTopic;
+import me.artemiyulyanov.uptodate.models.Category;
 import me.artemiyulyanov.uptodate.models.ContentBlock;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.repositories.ArticleRepository;
@@ -19,12 +17,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class ArticleService implements ResourceService<ArticleResourceManager> {
@@ -37,7 +32,7 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
 
     @Autowired
     @Lazy
-    private ArticleTopicService articleTopicService;
+    private CategoryService categoryService;
 
     @Autowired
     private MinioService minioService;
@@ -77,19 +72,21 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         return articleRepository.findByAuthor(author);
     }
 
-    public boolean create(User author, String heading, String description, String content, List<String> topicsNames, MultipartFile cover, List<MultipartFile> resources) {
+    public boolean create(User author, String heading, String description, String content, List<String> categoriesNames, MultipartFile cover, List<MultipartFile> resources) {
         try {
-            Set<ArticleTopic> topics = topicsNames.stream()
-                    .map(articleTopicService::findByName)
+            Set<Category> categories = categoriesNames.stream()
+                    .map(categoryService::findByName)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());
 
+            List<ContentBlock> contentBlocks = objectMapper.readValue(content, objectMapper.getTypeFactory().constructCollectionType(List.class, ContentBlock.class));
+
             Article article = Article.builder()
                     .heading(heading)
                     .description(description)
-                    .content(content)
-                    .topics(topics)
+                    .content(contentBlocks)
+                    .categories(categories)
                     .createdAt(LocalDateTime.now())
                     .author(author)
                     .build();
@@ -105,19 +102,21 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         }
     }
 
-    public boolean edit(Long id, String heading, String description, String content, List<String> topicsNames, MultipartFile cover, List<MultipartFile> resources) {
+    public boolean edit(Long id, String heading, String description, String content, List<String> categoriesNames, MultipartFile cover, List<MultipartFile> resources) {
         try {
             Article newArticle = articleRepository.findById(id).get();
-            Set<ArticleTopic> topics = topicsNames.stream()
-                    .map(articleTopicService::findByName)
+            Set<Category> categories = categoriesNames.stream()
+                    .map(categoryService::findByName)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());
 
+            List<ContentBlock> contentBlocks = objectMapper.readValue(content, objectMapper.getTypeFactory().constructCollectionType(List.class, ContentBlock.class));
+
             newArticle.setHeading(heading);
             newArticle.setDescription(description);
-            newArticle.setContent(content);
-            newArticle.setTopics(topics);
+            newArticle.setContent(contentBlocks);
+            newArticle.setCategories(categories);
 
             articleRepository.save(newArticle);
 

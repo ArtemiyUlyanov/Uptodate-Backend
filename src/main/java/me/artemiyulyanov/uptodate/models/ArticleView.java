@@ -22,8 +22,7 @@ public class ArticleView {
 
     @ManyToOne
     @JoinColumn(name = "article_id", nullable = false)
-    @JsonIgnore // a new Uptodate data approaching update
-//    @JsonIgnoreProperties({"author", "comments", "likes", "views"})
+    @JsonIgnore
     private Article article;
 
     @ManyToOne

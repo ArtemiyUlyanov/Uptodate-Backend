@@ -3,47 +3,27 @@ package me.artemiyulyanov.uptodate.controllers.api.articles;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
 import me.artemiyulyanov.uptodate.controllers.api.articles.filters.ArticleFilter;
 import me.artemiyulyanov.uptodate.models.Article;
-import me.artemiyulyanov.uptodate.models.ArticleTopic;
+import me.artemiyulyanov.uptodate.models.PermissionScope;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.services.*;
 import me.artemiyulyanov.uptodate.web.PageableObject;
 import me.artemiyulyanov.uptodate.web.RequestService;
-import me.artemiyulyanov.uptodate.web.ServerResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
 import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/articles")
@@ -54,7 +34,7 @@ public class ArticleController extends AuthenticatedController {
     private ArticleService articleService;
 
     @Autowired
-    private ArticleTopicService articleTopicService;
+    private CategoryService categoryService;
 
     @Autowired
     private ArticleViewService articleViewService;
@@ -139,7 +119,7 @@ public class ArticleController extends AuthenticatedController {
         }
 
         Article newArticle = wrappedArticle.get();
-        if (!newArticle.getAuthor().getId().equals(wrappedUser.get().getId())) {
+        if (!newArticle.getPermissionScope().contains(PermissionScope.EDIT)) {
             return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the changes!");
         }
 
@@ -160,7 +140,7 @@ public class ArticleController extends AuthenticatedController {
         }
 
         Article article = wrappedArticle.get();
-        if (!article.getAuthor().getId().equals(wrappedUser.get().getId())) {
+        if (!article.getPermissionScope().contains(PermissionScope.DELETE)) {
             return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the removal!");
         }
 

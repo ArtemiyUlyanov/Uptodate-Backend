@@ -10,13 +10,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "topics")
+@Table(name = "categories")
 @Builder
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ArticleTopic {
+public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,15 +29,15 @@ public class ArticleTopic {
     private TranslativeString name;
 
     @JsonIgnore
-    @ManyToMany(mappedBy = "topics")
+    @ManyToMany(mappedBy = "categories")
     private Set<Article> articles = new HashSet<>();
 
     public int getCount() {
         return articles.size();
     }
 
-    public static ArticleTopic of(String englishParent, String russianParent, String englishName, String russianName) {
-        return ArticleTopic.builder()
+    public static Category of(String englishParent, String russianParent, String englishName, String russianName) {
+        return Category.builder()
                 .parent(TranslativeString.builder()
                         .english(englishParent)
                         .russian(russianParent)

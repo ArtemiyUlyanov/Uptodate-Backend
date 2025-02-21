@@ -1,7 +1,6 @@
 package me.artemiyulyanov.uptodate.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -34,20 +32,20 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ArticleLike> likedArticles = new HashSet<>();
 
-    @JsonIgnore // a new Uptodate data approaching update
-    @ManyToMany(mappedBy = "likes")
-    private Set<ArticleComment> likedComments = new HashSet<>();
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CommentLike> likedComments = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<Role> roles;
 
-    @JsonIgnore // a new Uptodate data approaching update
+    @JsonIgnore
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Article> articles = new ArrayList<>();
 
     @JsonIgnore // a new Uptodate data approaching update
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArticleComment> comments = new ArrayList<>();
+    private List<Comment> comments = new ArrayList<>();
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserSettings settings;
@@ -67,9 +65,9 @@ public class User {
                 .build();
     }
 
-    public List<Long> getLikedCommentsIds() {
-        return likedComments.stream()
-                .map(ArticleComment::getId)
+    public List<String> getRolesNames() {
+        return roles.stream()
+                .map(Role::getName)
                 .toList();
     }
 
@@ -81,7 +79,7 @@ public class User {
 
     public List<Long> getCommentsIds() {
         return comments.stream()
-                .map(ArticleComment::getId)
+                .map(Comment::getId)
                 .toList();
     }
 }
