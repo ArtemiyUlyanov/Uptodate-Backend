@@ -4,20 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-<<<<<<< HEAD
-    <list default="true" id="73271970-e87c-44d1-a217-0e37f2755190" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+    <list default="true" id="601abb2a-9191-458a-8af0-e9aa44eabb30" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/artemiyulyanov/uptodate/configuration/RedisConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/artemiyulyanov/uptodate/configuration/RedisConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/artemiyulyanov/uptodate/models/ArticleTopic.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/artemiyulyanov/uptodate/models/ArticleTopic.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/artemiyulyanov/uptodate/minio/resources/CommentResourceManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/artemiyulyanov/uptodate/minio/resources/CommentResourceManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/artemiyulyanov/uptodate/models/Comment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/artemiyulyanov/uptodate/models/Comment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/me/artemiyulyanov/uptodate/CommentServiceTest.java" beforeDir="false" />
     </list>
-=======
-    <list default="true" id="73271970-e87c-44d1-a217-0e37f2755190" name="Changes" comment="Uptodate v0.2.2" />
->>>>>>> dev
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -26,73 +19,39 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Interface" />
-        <option value="AnnotationType" />
-        <option value="Dockerfile" />
+        <option value="Enum" />
         <option value="Class" />
       </list>
     </option>
   </component>
-  <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-  </component>
-<<<<<<< HEAD
-=======
-  <component name="MarkdownSettingsMigration">
-    <option name="stateVersion" value="1" />
-  </component>
->>>>>>> dev
-  <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 8
-}</component>
-  <component name="ProjectId" id="2pTn8AHl89a3TCQ37K3ONNosnwW" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.UptodateApplication.executor&quot;: &quot;Run&quot;,
-<<<<<<< HEAD
-    &quot;Docker.Dockerfile.executor&quot;: &quot;Run&quot;,
-    &quot;Docker.docker-compose.yml.mysql: Compose Deployment.executor&quot;: &quot;Run&quot;,
-=======
->>>>>>> dev
-    &quot;Docker.docker-compose.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
-    &quot;Maven.uptodate [clean].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.uptodate [compile].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.uptodate [install].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.uptodate [package].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.uptodate [validate].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.uptodate [verify].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-<<<<<<< HEAD
-    &quot;git-widget-placeholder&quot;: &quot;production&quot;,
-=======
-    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
->>>>>>> dev
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Artemii/IdeaProjects/TaskManager&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Docker.docker-compose.yml: Compose Deployment.executor": "Run",
+    "JUnit.CommentServiceTest.executor": "Run",
+    "JUnit.CommentServiceTest.testCreateComment.executor": "Run",
+    "JUnit.CommentServiceTest.testGetComment.executor": "Run",
+    "Maven.uptodate [compile].executor": "Run",
+    "Maven.uptodate [package].executor": "Run",
+    "Maven.uptodate [test].executor": "Run",
+    "Maven.uptodate [validate].executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Artemii/IdeaProjects/Uptodate/src/test"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\Artemii\IdeaProjects\Uptodate\src\main\java\me\artemiyulyanov\uptodate" />
-      <recent name="C:\Users\Artemii\IdeaProjects\Uptodate\src\main\resources" />
-    </key>
-    <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="me.artemiyulyanov.uptodate.models" />
-      <recent name="me.artemiyulyanov.uptodate.configuration" />
+      <recent name="C:\Users\Artemii\IdeaProjects\Uptodate\src\test" />
     </key>
   </component>
   <component name="RunManager" selected="Docker.docker-compose.yml: Compose Deployment">
-    <configuration name="UptodateApplication" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="me.artemiyulyanov.uptodate.UptodateApplication" />
+    <configuration name="CommentServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="uptodate" />
       <extension name="coverage">
         <pattern>
@@ -100,50 +59,49 @@
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
+      <option name="PACKAGE_NAME" value="me.artemiyulyanov.uptodate" />
+      <option name="MAIN_CLASS_NAME" value="me.artemiyulyanov.uptodate.CommentServiceTest" />
+      <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="Uptodate" />
+    <configuration name="CommentServiceTest.testCreateComment" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="uptodate" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="me.artemiyulyanov.uptodate.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="me.artemiyulyanov.uptodate" />
+      <option name="MAIN_CLASS_NAME" value="me.artemiyulyanov.uptodate.CommentServiceTest" />
+      <option name="METHOD_NAME" value="testCreateComment" />
+      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
-      <module name="Uptodate" />
-      <option name="filePath" />
+    <configuration name="CommentServiceTest.testGetComment" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="uptodate" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="me.artemiyulyanov.uptodate.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="me.artemiyulyanov.uptodate" />
+      <option name="MAIN_CLASS_NAME" value="me.artemiyulyanov.uptodate.CommentServiceTest" />
+      <option name="METHOD_NAME" value="testGetComment" />
+      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-<<<<<<< HEAD
-    <configuration name="Dockerfile" type="docker-deploy" factoryName="dockerfile" temporary="true" server-name="Docker">
-      <deployment type="dockerfile">
-        <settings>
-          <option name="containerName" value="" />
-          <option name="sourceFilePath" value="Dockerfile" />
-        </settings>
-      </deployment>
-      <method v="2" />
-    </configuration>
-=======
->>>>>>> dev
     <configuration default="true" type="docker-deploy" factoryName="docker-compose.yml" temporary="true">
-      <deployment type="docker-compose.yml">
-        <settings />
-      </deployment>
+      <deployment type="docker-compose.yml" />
       <method v="2" />
     </configuration>
-<<<<<<< HEAD
-    <configuration default="true" type="docker-deploy" factoryName="dockerfile" temporary="true">
-      <deployment type="dockerfile">
-        <settings />
-      </deployment>
-      <method v="2" />
-    </configuration>
-=======
->>>>>>> dev
     <configuration name="docker-compose.yml: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" temporary="true" server-name="Docker">
       <deployment type="docker-compose.yml">
         <settings>
@@ -152,65 +110,24 @@
       </deployment>
       <method v="2" />
     </configuration>
-<<<<<<< HEAD
-    <configuration name="docker-compose.yml.mysql: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" temporary="true" server-name="Docker">
-      <deployment type="docker-compose.yml">
-        <settings>
-          <option name="services">
-            <list>
-              <option value="mysql" />
-            </list>
-          </option>
-          <option name="sourceFilePath" value="docker-compose.yml" />
-        </settings>
-      </deployment>
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Docker.docker-compose.yml: Compose Deployment" />
-        <item itemvalue="Docker.docker-compose.yml.mysql: Compose Deployment" />
-=======
-    <recent_temporary>
-      <list>
-        <item itemvalue="Docker.docker-compose.yml: Compose Deployment" />
->>>>>>> dev
-        <item itemvalue="Application.UptodateApplication" />
-        <item itemvalue="Docker.Dockerfile" />
+        <item itemvalue="JUnit.CommentServiceTest.testCreateComment" />
+        <item itemvalue="JUnit.CommentServiceTest.testGetComment" />
+        <item itemvalue="JUnit.CommentServiceTest" />
       </list>
     </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="73271970-e87c-44d1-a217-0e37f2755190" name="Changes" comment="" />
-      <created>1732798771252</created>
+      <changelist id="601abb2a-9191-458a-8af0-e9aa44eabb30" name="Changes" comment="" />
+      <created>1740134455922</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1732798771252</updated>
+      <updated>1740134455922</updated>
     </task>
-    <task id="LOCAL-00001" summary="Uptodate v0.2.1">
-      <option name="closed" value="true" />
-      <created>1733761257719</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1733761257719</updated>
-    </task>
-    <task id="LOCAL-00002" summary="Uptodate v0.2.2">
-      <option name="closed" value="true" />
-      <created>1734179113581</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1734179113581</updated>
-    </task>
-    <option name="localTasksCounter" value="3" />
     <servers />
-  </component>
-  <component name="VcsManagerConfiguration">
-    <MESSAGE value="Uptodate v0.2.1" />
-    <MESSAGE value="Uptodate v0.2.2" />
-    <option name="LAST_COMMIT_MESSAGE" value="Uptodate v0.2.2" />
   </component>
 </project>

@@ -9,8 +9,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -32,16 +34,7 @@ public class CommentResourceManager implements ResourceManager<Comment> {
         if (files != null) {
             List<String> resourcesUrls = files.stream()
                     .map(file -> minioService.uploadFile(getResourceFolder(comment) + File.separator + file.getOriginalFilename(), file))
-                    .toList();
-
-            System.out.println("repository");
-            System.out.println(commentRepository);
-
-            System.out.println("entity");
-            System.out.println(comment);
-
-            System.out.println("urls");
-            System.out.println(resourcesUrls);
+                    .collect(Collectors.toCollection(ArrayList::new));
 
             comment.setResources(resourcesUrls);
             commentRepository.save(comment);
@@ -57,7 +50,7 @@ public class CommentResourceManager implements ResourceManager<Comment> {
         if (files != null) {
             List<String> resourcesUrls = files.stream()
                     .map(file -> minioService.uploadFile(getResourceFolder(comment) + File.separator + file.getOriginalFilename(), file))
-                    .toList();
+                    .collect(Collectors.toCollection(ArrayList::new));
 
             comment.setResources(resourcesUrls);
             commentRepository.save(comment);

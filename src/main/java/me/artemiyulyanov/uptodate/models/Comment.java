@@ -47,10 +47,10 @@ public class Comment {
     @JsonIgnore
     private User author;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "comment_resources", joinColumns = @JoinColumn(name = "comment_id"))
-    @Column(name = "resource")
-    private List<String> resources;
+    @Column(name = "file")
+    private List<String> resources = new ArrayList<>();
 
     @Transient
     private List<PermissionScope> permissionScope = new ArrayList<>();
