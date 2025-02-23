@@ -1,16 +1,15 @@
-# UPTODATE v0.3 (dev)
+# UPTODATE v1.0 (dev)
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file or the full text at [MIT License](https://opensource.org/licenses/MIT) for details.
 
-## New amendments and features
+## Overview
 
-1. The REST API has been enhanced by enforcing some of new API endpoints:
-   - /api/articles/comments/get
-   - /api/articles/comments/delete
-   - /api/articles/comments/create
-2. A storaging server has been applied to a project and bound with the Amazon S3 API
+"Uptodate v1.0" is the final issue of editing the Backend of the article publishing service as it finally has been complied with an agreed MVP (minimum viable product) version.
+All of the issues were committed to comply with common international patterns. It started with a non-compliable version and came to a version that is meticulously detalized and aligned with common patterns. Specifically, there were completely changed the endpoints of the REST API and the way the customer can request to them. 
+
+Prospectly, there will be a Swagger documentation with detailed explanation of the server application endpoints.
 
 ## Execution
 
