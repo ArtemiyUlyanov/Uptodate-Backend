@@ -1,6 +1,7 @@
 package me.artemiyulyanov.uptodate.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.slugify.Slugify;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.minio.resources.ArticleResourceManager;
 import me.artemiyulyanov.uptodate.models.Article;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,6 +41,9 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private Slugify slugify;
 
     public long count() {
         return articleRepository.count();
@@ -64,15 +69,15 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         return articleRepository.findById(id);
     }
 
-    public Optional<Article> findByDateAndHeading(Date createdAt, String heading) {
-        return articleRepository.findByDateAndHeading(createdAt, heading).stream().findFirst();
+    public Optional<Article> findBySlug(String slug) {
+        return articleRepository.findBySlug(slug);
     }
 
     public List<Article> findByAuthor(User author) {
         return articleRepository.findByAuthor(author);
     }
 
-    public boolean create(User author, String heading, String description, String content, List<String> categoriesNames, MultipartFile cover, List<MultipartFile> resources) {
+    public Article create(User author, String heading, String description, String content, List<String> categoriesNames, MultipartFile cover, List<MultipartFile> resources) {
         try {
             Set<Category> categories = categoriesNames.stream()
                     .map(categoryService::findByName)
@@ -87,22 +92,27 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
                     .description(description)
                     .content(contentBlocks)
                     .categories(categories)
+                    .slug(slugify.slugify(heading))
                     .createdAt(LocalDateTime.now())
                     .author(author)
                     .build();
 
-            articleRepository.save(article);
+            article = articleRepository.save(article);
 
-            getResourceManager().uploadContent(article, resources);
-            getResourceManager().uploadCover(article, cover);
-            return true;
+            List<ContentBlock> updatedContentBlocks = getResourceManager().uploadContent(article, resources);
+            String updatedCover = getResourceManager().uploadCover(article, cover);
+
+            article.setContent(updatedContentBlocks);
+            article.setCover(updatedCover);
+
+            return articleRepository.save(article);
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            return null;
         }
     }
 
-    public boolean edit(Long id, String heading, String description, String content, List<String> categoriesNames, MultipartFile cover, List<MultipartFile> resources) {
+    public Article edit(Long id, String heading, String description, String content, List<String> categoriesNames, MultipartFile cover, List<MultipartFile> resources) {
         try {
             Article newArticle = articleRepository.findById(id).get();
             Set<Category> categories = categoriesNames.stream()
@@ -115,17 +125,15 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
 
             newArticle.setHeading(heading);
             newArticle.setDescription(description);
-            newArticle.setContent(contentBlocks);
             newArticle.setCategories(categories);
+            newArticle.setSlug(slugify.slugify(heading));
+            newArticle.setContent(getResourceManager().uploadContent(newArticle, resources));
+            newArticle.setCover(getResourceManager().uploadCover(newArticle, cover));
 
-            articleRepository.save(newArticle);
-
-            getResourceManager().uploadContent(newArticle, resources);
-            getResourceManager().uploadCover(newArticle, cover);
-            return true;
+            return articleRepository.save(newArticle);
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            return null;
         }
     }
 
@@ -138,8 +146,8 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         articleRepository.delete(article);
     }
 
-    public void save(Article article) {
-        articleRepository.save(article);
+    public Article save(Article article) {
+        return articleRepository.save(article);
     }
 
     @Override

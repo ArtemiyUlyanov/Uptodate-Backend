@@ -36,8 +36,7 @@ public class CommentResourceManager implements ResourceManager<Comment> {
                     .map(file -> minioService.uploadFile(getResourceFolder(comment) + File.separator + file.getOriginalFilename(), file))
                     .collect(Collectors.toCollection(ArrayList::new));
 
-            comment.setResources(resourcesUrls);
-            commentRepository.save(comment);
+            return resourcesUrls;
         }
 
         return Collections.emptyList();
@@ -52,8 +51,7 @@ public class CommentResourceManager implements ResourceManager<Comment> {
                     .map(file -> minioService.uploadFile(getResourceFolder(comment) + File.separator + file.getOriginalFilename(), file))
                     .collect(Collectors.toCollection(ArrayList::new));
 
-            comment.setResources(resourcesUrls);
-            commentRepository.save(comment);
+            return resourcesUrls;
         }
 
         return Collections.emptyList();

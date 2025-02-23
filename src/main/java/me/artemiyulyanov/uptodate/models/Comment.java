@@ -39,6 +39,7 @@ public class Comment {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentLike> likes = new ArrayList<>();
 
@@ -47,15 +48,18 @@ public class Comment {
     @JsonIgnore
     private User author;
 
+    @Builder.Default
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "comment_resources", joinColumns = @JoinColumn(name = "comment_id"))
     @Column(name = "file")
     private List<String> resources = new ArrayList<>();
 
     @Transient
+    @Builder.Default
     private List<PermissionScope> permissionScope = new ArrayList<>();
 
     @PostLoad
+    @PrePersist
     private void initResources() {
         if (userService != null) {
             User wrappedUser = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);

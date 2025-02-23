@@ -78,10 +78,10 @@ public class CommentController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", comments);
     }
 
-    @PostMapping
+    @PostMapping("/{articleId}")
     public ResponseEntity<?> createComment(
+            @PathVariable Long articleId,
             @RequestParam String content,
-            @RequestParam Long articleId,
             @RequestParam(value = "resources", required = false) List<MultipartFile> resources) {
         Optional<User> wrappedUser = getAuthorizedUser();
         Optional<Article> wrappedArticle = articleService.findById(articleId);
@@ -90,8 +90,13 @@ public class CommentController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The article is undefined");
         }
 
-        commentService.create(content, wrappedUser.get(), wrappedArticle.get(), resources);
-        return requestService.executeApiResponse(HttpStatus.OK, "The comment has been created!");
+        Comment createdComment = commentService.create(content, wrappedUser.get(), wrappedArticle.get(), resources);
+
+        if (createdComment == null) {
+            return requestService.executeApiResponse(HttpStatus.EXPECTATION_FAILED, "Unable to create comment!");
+        }
+
+        return requestService.executeEntityResponse(HttpStatus.OK, "The comment has been created!", createdComment);
     }
 
     @PutMapping("/{id}")
@@ -99,20 +104,23 @@ public class CommentController extends AuthenticatedController {
             @PathVariable Long id,
             @RequestParam String content,
             @RequestParam(value = "resources", required = false) List<MultipartFile> resources) {
-        Optional<User> wrappedUser = getAuthorizedUser();
         Optional<Comment> wrappedArticleComment = commentService.findById(id);
 
         if (wrappedArticleComment.isEmpty()) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Comment is undefined!");
         }
 
-        Comment newComment = wrappedArticleComment.get();
-        if (!newComment.getPermissionScope().contains(PermissionScope.EDIT)) {
+        Comment comment = wrappedArticleComment.get();
+        if (!comment.getPermissionScope().contains(PermissionScope.EDIT)) {
             return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the changes!");
         }
 
-        commentService.edit(id, content, resources);
-        return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
+        Comment updatedComment = commentService.edit(id, content, resources);
+        if (updatedComment == null) {
+            return requestService.executeApiResponse(HttpStatus.EXPECTATION_FAILED, "Unable to edit comment!");
+        }
+
+        return requestService.executeEntityResponse(HttpStatus.OK, "The changes have been applied successfully!", updatedComment);
     }
 
     @DeleteMapping("/{id}")
@@ -133,7 +141,7 @@ public class CommentController extends AuthenticatedController {
         return requestService.executeApiResponse(HttpStatus.OK, "The removal has been processed successfully!");
     }
 
-    @PostMapping("/{id}/like")
+    @PatchMapping("/{id}/like")
     public ResponseEntity<?> likeComment(@PathVariable Long id) {
         Optional<User> wrappedUser = getAuthorizedUser();
 
@@ -142,9 +150,7 @@ public class CommentController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The comment is undefined!");
         }
 
-        Comment comment = wrappedComment.get();
-        commentLikeService.like(comment, wrappedUser.get());
-
-        return requestService.executeApiResponse(HttpStatus.OK, "The comment has been liked by the user successfully!");
+        Comment comment = commentLikeService.like(wrappedComment.get(), wrappedUser.get());
+        return requestService.executeEntityResponse(HttpStatus.OK, "The comment has been liked by the user successfully!", comment);
     }
 }

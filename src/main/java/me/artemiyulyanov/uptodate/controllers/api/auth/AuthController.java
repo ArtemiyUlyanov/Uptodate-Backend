@@ -114,16 +114,8 @@ public class AuthController extends AuthenticatedController {
         EmailVerificationCode emailVerificationCode = mailService.getVerificationCode(email);
         RegisterRequest registerRequest = emailVerificationCode.getCredential("registerRequest").getValue(RegisterRequest.class);
 
-        User user = User.builder()
-                .username(registerRequest.getUsername())
-                .email(email)
-                .password(registerRequest.getPassword())
-                .firstName(registerRequest.getFirstName())
-                .lastName(registerRequest.getLastName())
-                .build();
-
         mailService.enterCode(email, code);
-        userService.createNewUser(user);
+        User user = userService.create(registerRequest.getEmail(), registerRequest.getUsername(), registerRequest.getPassword(), registerRequest.getFirstName(), registerRequest.getLastName());
 
         UserDetails userDetails = userService.loadUserByUsername(user.getUsername());
         String accessToken = jwtUtil.generateAccessToken(userDetails);

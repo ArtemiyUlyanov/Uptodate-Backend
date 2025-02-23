@@ -30,10 +30,12 @@ public class User {
     private String firstName, lastName, icon;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<ArticleLike> likedArticles = new HashSet<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<CommentLike> likedComments = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -41,10 +43,12 @@ public class User {
 
     @JsonIgnore
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Article> articles = new ArrayList<>();
 
     @JsonIgnore // a new Uptodate data approaching update
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -23,6 +23,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 
 @RestController
@@ -57,7 +59,20 @@ public class ArticleController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The articles have been retrieved successfully!", articles);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<?> getArticleBySlug(
+            @PathVariable String slug) {
+        Optional<Article> wrappedArticle = articleService.findBySlug(slug);
+
+        if (wrappedArticle.isEmpty()) {
+            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
+        }
+
+        articleViewService.view(wrappedArticle.get(), getAuthorizedUser().orElse(null));
+        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", wrappedArticle.get());
+    }
+
+    @GetMapping("/id/{id}")
     public ResponseEntity<?> getArticleById(@PathVariable Long id) {
         Optional<Article> wrappedArticle = articleService.findById(id);
 
@@ -68,7 +83,7 @@ public class ArticleController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", wrappedArticle.get());
     }
 
-    @PostMapping("/{id}/like")
+    @PatchMapping("/{id}/like")
     public ResponseEntity<?> likeArticle(@PathVariable Long id, Model model) {
         Optional<User> wrappedUser = getAuthorizedUser();
 
@@ -77,8 +92,8 @@ public class ArticleController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The article is undefined!");
         }
 
-        articleLikeService.like(wrappedArticle.get(), wrappedUser.get());
-        return requestService.executeApiResponse(HttpStatus.OK, "The article has been liked by the user successfully!");
+        Article updatedArticle = articleLikeService.like(wrappedArticle.get(), wrappedUser.get());
+        return requestService.executeEntityResponse(HttpStatus.OK, "The article has been liked by the user successfully!", updatedArticle);
     }
 
     @PostMapping
@@ -95,11 +110,12 @@ public class ArticleController extends AuthenticatedController {
             resources = Collections.emptyList();
         }
 
-        if (!articleService.create(wrappedUser.get(), heading, description, content, topicsNames, cover, resources)) {
+        Article createdArticle = articleService.create(wrappedUser.get(), heading, description, content, topicsNames, cover, resources);
+        if (createdArticle == null) {
             return requestService.executeApiResponse(HttpStatus.EXPECTATION_FAILED, "Unable to create article!");
         }
 
-        return requestService.executeApiResponse(HttpStatus.OK, "The article has been created!");
+        return requestService.executeEntityResponse(HttpStatus.OK, "The article has been created!", createdArticle);
     }
 
     @PutMapping("/{id}")
@@ -118,16 +134,17 @@ public class ArticleController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
         }
 
-        Article newArticle = wrappedArticle.get();
-        if (!newArticle.getPermissionScope().contains(PermissionScope.EDIT)) {
+        Article article = wrappedArticle.get();
+        if (!article.getPermissionScope().contains(PermissionScope.EDIT)) {
             return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "The authorized user has no authority to proceed the changes!");
         }
 
-        if (!articleService.edit(id, heading, description, content, topicsNames, cover, resources)) {
+        Article updatedArticle = articleService.edit(id, heading, description, content, topicsNames, cover, resources);
+        if (updatedArticle == null) {
             return requestService.executeApiResponse(HttpStatus.EXPECTATION_FAILED, "Unable to edit article!");
         }
 
-        return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
+        return requestService.executeEntityResponse(HttpStatus.OK, "The changes have been applied successfully!", updatedArticle);
     }
 
     @DeleteMapping("/{id}")
@@ -173,27 +190,5 @@ public class ArticleController extends AuthenticatedController {
         );
 
         return requestService.executePaginatedEntityResponse(HttpStatus.OK, paginatedArticles);
-    }
-
-    @GetMapping("/retrieve")
-    public ResponseEntity<?> retrieveArticle(
-            @RequestParam(value = "heading") String heading,
-            @RequestParam(value = "createdAt") String createdAtString) {
-        Date date;
-
-        try {
-            date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(createdAtString);
-        } catch (ParseException e) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The date is wrong!");
-        }
-
-        Optional<Article> wrappedArticle = articleService.findByDateAndHeading(date, heading);
-
-        if (wrappedArticle.isEmpty()) {
-            return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "Article is undefined!");
-        }
-
-        articleViewService.view(wrappedArticle.get(), getAuthorizedUser().orElse(null));
-        return requestService.executeEntityResponse(HttpStatus.OK, "The request has been proceeded successfully!", wrappedArticle.get());
     }
 }

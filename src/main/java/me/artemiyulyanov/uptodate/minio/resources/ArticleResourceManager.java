@@ -80,23 +80,19 @@ public class ArticleResourceManager implements ResourceManager<Article> {
         return minioService.getFolder(getResourceFolder(article));
     }
 
-    public void uploadContent(Article article, List<MultipartFile> resources) throws Exception {
+    public List<ContentBlock> uploadContent(Article article, List<MultipartFile> resources) {
         AtomicInteger index = new AtomicInteger(0);
 
-        List<String> resourceUrls = uploadResources(article, resources);
+        List<String> resourcesUrls = uploadResources(article, resources);
         List<ContentBlock> updatedContentBlocks = article.getContent().stream()
                 .filter(contentBlock -> contentBlock.getType().equals("image") && contentBlock.getText().startsWith("file-"))
-                .peek(contentBlock -> contentBlock.setText(resourceUrls.get(index.getAndIncrement())))
+                .peek(contentBlock -> contentBlock.setText(resourcesUrls.get(index.getAndIncrement())))
                 .toList();
 
-        article.setContent(updatedContentBlocks);
-        articleRepository.save(article);
+        return updatedContentBlocks;
     }
 
-    public void uploadCover(Article article, MultipartFile cover) {
-        String coverUrl = uploadResources(article, List.of(cover)).stream().findFirst().orElse(null);
-
-        article.setCover(coverUrl);
-        articleRepository.save(article);
+    public String uploadCover(Article article, MultipartFile cover) {
+        return uploadResources(article, List.of(cover)).stream().findFirst().orElse(null);
     }
 }

@@ -2,20 +2,29 @@ package me.artemiyulyanov.uptodate.services;
 
 import me.artemiyulyanov.uptodate.models.*;
 import me.artemiyulyanov.uptodate.repositories.CommentLikeRepository;
+import me.artemiyulyanov.uptodate.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CommentLikeService {
     @Autowired
     private CommentLikeRepository commentLikeRepository;
 
-    public void like(Comment comment, User user) {
-        if (!commentLikeRepository.existsByCommentAndUser(comment, user)) {
+    @Autowired
+    private CommentService commentService;
+
+    public Comment like(Comment comment, User user) {
+        List<CommentLike> likes = comment.getLikes();
+        boolean alreadyLiked = likes.stream().anyMatch(like -> like.getUser().getId().equals(user.getId()));
+
+        if (!alreadyLiked) {
             CommentLike commentLike = CommentLike
                     .builder()
                     .comment(comment)
@@ -23,11 +32,13 @@ public class CommentLikeService {
                     .likedAt(LocalDateTime.now())
                     .build();
 
-            commentLikeRepository.save(commentLike);
+            likes.add(commentLike);
         } else {
-            Optional<CommentLike> wrappedCommentLike = commentLikeRepository.findByCommentAndUser(comment, user);
-            commentLikeRepository.delete(wrappedCommentLike.get());
+            likes.removeIf(like -> like.getUser().getId().equals(user.getId()));
         }
+
+        comment.setLikes(likes);
+        return commentService.save(comment);
     }
 
     public List<CommentLike> findLastLikesOfAuthor(User user, LocalDateTime after) {

@@ -50,7 +50,7 @@ public class CommentService implements ResourceService<CommentResourceManager> {
         return commentRepository.findByAuthor(author);
     }
 
-    public void create(String content, User author, Article article, List<MultipartFile> resources) {
+    public Comment create(String content, User author, Article article, List<MultipartFile> resources) {
         Comment comment = Comment.builder()
                 .content(content)
                 .createdAt(LocalDateTime.now())
@@ -58,18 +58,21 @@ public class CommentService implements ResourceService<CommentResourceManager> {
                 .article(article)
                 .build();
 
-        commentRepository.save(comment);
+        comment = commentRepository.save(comment);
+        List<String> resourcesUrls = getResourceManager().uploadResources(comment, resources);
 
-        getResourceManager().uploadResources(comment, resources);
+        comment.setResources(resourcesUrls);
+        return commentRepository.save(comment);
     }
 
-    public void edit(Long id, String content, List<MultipartFile> resources) {
+    public Comment edit(Long id, String content, List<MultipartFile> resources) {
         Comment newComment = commentRepository.findById(id).get();
 
         newComment.setContent(content);
-        getResourceManager().updateResources(newComment, resources);
 
-        commentRepository.save(newComment);
+        List<String> updatedResources = getResourceManager().updateResources(newComment, resources);
+        newComment.setResources(updatedResources);
+        return commentRepository.save(newComment);
     }
 
     public void delete(Comment comment) {
@@ -77,8 +80,8 @@ public class CommentService implements ResourceService<CommentResourceManager> {
         commentRepository.delete(comment);
     }
 
-    public void save(Comment comment) {
-        commentRepository.save(comment);
+    public Comment save(Comment comment) {
+        return commentRepository.save(comment);
     }
 
     @Override

@@ -33,8 +33,6 @@ public class MinioService {
             long contentLength = file.getSize();
             String contentType = file.getContentType();
 
-            System.out.println(contentType);
-
             PutObjectRequest putObjectRequest = new PutObjectRequest(
                     bucket,
                     objectKey,

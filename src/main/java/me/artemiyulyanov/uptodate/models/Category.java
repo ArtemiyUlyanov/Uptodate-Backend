@@ -30,6 +30,7 @@ public class Category {
 
     @JsonIgnore
     @ManyToMany(mappedBy = "categories")
+    @Builder.Default
     private Set<Article> articles = new HashSet<>();
 
     public int getCount() {

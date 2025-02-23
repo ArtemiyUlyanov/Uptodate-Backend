@@ -28,6 +28,9 @@ public class Article {
 
     private String heading, description, cover;
 
+    @Column(unique = true)
+    private String slug;
+
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContentBlock> content;
 
@@ -35,12 +38,15 @@ public class Article {
     private LocalDateTime createdAt;
 
     @JsonIgnore
+    @Builder.Default
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleView> views = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleLike> likes = new ArrayList<>();
 
@@ -50,6 +56,7 @@ public class Article {
             joinColumns = @JoinColumn(name = "article_id"),
             inverseJoinColumns = @JoinColumn(name = "category_id")
     )
+    @Builder.Default
     private Set<Category> categories = new HashSet<>();
 
     @ManyToOne
@@ -58,6 +65,7 @@ public class Article {
     private User author;
 
     @Transient
+    @Builder.Default
     private List<PermissionScope> permissionScope = new ArrayList<>();
 
     @PostLoad

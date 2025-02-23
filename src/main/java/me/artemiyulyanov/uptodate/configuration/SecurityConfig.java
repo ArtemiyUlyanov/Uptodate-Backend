@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui", "/v3/api-docs").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/{id}", "/api/articles/search", "/api/articles/retrieve").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/id/**", "/api/articles/slug/**", "/api/articles/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/comments", "/api/comments/{id}", "/api/comments/author/{id}", "/api/comments/article/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/{id}").permitAll()
                         .requestMatchers("/api/categories").permitAll()

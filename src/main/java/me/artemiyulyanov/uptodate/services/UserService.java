@@ -91,14 +91,22 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         return userRepository.findAllById(ids);
     }
 
-    public void createNewUser(User user) {
+    public User create(String email, String username, String password, String firstName, String lastName) {
+        User user = User.builder()
+                .email(email)
+                .username(username)
+                .password(password)
+                .firstName(firstName)
+                .lastName(lastName)
+                .build();
+
         Role basicRole = roleService.findRoleByName("USER");
         user.setRoles(Set.of(basicRole));
 
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
-    public void editUser(Long id, String username, String firstName, String lastName, MultipartFile icon) {
+    public User edit(Long id, String username, String firstName, String lastName, MultipartFile icon) {
         User newUser = userRepository.findById(id).get();
 
         newUser.setUsername(username);
@@ -109,7 +117,7 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         getResourceManager().updateResources(newUser, List.of(icon));
 
         newUser.setIcon(iconObjectKey);
-        userRepository.save(newUser);
+        return userRepository.save(newUser);
     }
 
     public void save(User user) {

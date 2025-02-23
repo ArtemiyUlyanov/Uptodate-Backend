@@ -69,14 +69,13 @@ public class AccountController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.CONFLICT, "The username is already taken!");
         }
 
-        userService.editUser(user.getId(), username, firstName, lastName, icon);
-        return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
+        User updatedUser = userService.edit(user.getId(), username, firstName, lastName, icon);
+        return requestService.executeEntityResponse(HttpStatus.OK, "The changes have been applied successfully!", updatedUser);
     }
 
     @PutMapping("/icon")
     public ResponseEntity<?> uploadIcon(@RequestParam(value = "icon") MultipartFile icon) {
         User user = getAuthorizedUser().get();
-        System.out.println("test");
 
         String iconObjectKey = userService.getResourceManager().getResourceFolder(user) + File.separator + icon.getOriginalFilename();
         userService.getResourceManager().updateResources(user, List.of(icon));
