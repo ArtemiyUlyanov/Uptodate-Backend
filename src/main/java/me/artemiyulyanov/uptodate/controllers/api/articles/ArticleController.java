@@ -125,9 +125,8 @@ public class ArticleController extends AuthenticatedController {
             @RequestParam String description,
             @RequestParam String content,
             @RequestParam List<String> topicsNames,
-            @RequestParam MultipartFile cover,
+            @RequestParam(required = false) MultipartFile cover,
             @RequestParam(required = false) List<MultipartFile> resources) {
-        Optional<User> wrappedUser = getAuthorizedUser();
         Optional<Article> wrappedArticle = articleService.findById(id);
 
         if (wrappedArticle.isEmpty()) {

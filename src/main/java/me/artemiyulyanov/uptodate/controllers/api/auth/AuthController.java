@@ -51,11 +51,7 @@ public class AuthController extends AuthenticatedController {
     private AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, Model model) {
-//        if (isUserAuthorized()) {
-//            return requestService.executeApiResponse(HttpStatus.UNAUTHORIZED, 11, "User is already authorized!");
-//        }
-
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         String username = loginRequest.getUsername();
         String password = loginRequest.getPassword();
 
@@ -81,7 +77,7 @@ public class AuthController extends AuthenticatedController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest, Model model) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         String username = registerRequest.getUsername();
         String email = registerRequest.getEmail();
         String password = registerRequest.getPassword();
@@ -91,7 +87,7 @@ public class AuthController extends AuthenticatedController {
         }
 
         registerRequest.setPassword(passwordEncoder.encode(password));
-        EmailVerificationCode emailVerificationCode = mailService.sendCode(email, List.of(
+        EmailVerificationCode emailVerificationCode = mailService.sendRegisterConfirmationCode(email, List.of(
                 EmailVerificationCode.Credential
                         .builder()
                         .key("registerRequest")
@@ -103,18 +99,18 @@ public class AuthController extends AuthenticatedController {
     }
 
     @PostMapping("/register/verify-code")
-    public ResponseEntity<?> registerVerifyCode(@RequestBody VerifyCodeRequest verifyCodeRequest, Model model) {
+    public ResponseEntity<?> registerVerifyCode(@RequestBody VerifyCodeRequest verifyCodeRequest) {
         String email = verifyCodeRequest.getEmail();
         String code = verifyCodeRequest.getCode();
 
-        if (!mailService.validateCode(email, code)) {
+        if (!mailService.validateCode(email, code, EmailVerificationCode.EmailVerificationScope.REGISTRATION)) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The code is invalid!");
         }
 
         EmailVerificationCode emailVerificationCode = mailService.getVerificationCode(email);
         RegisterRequest registerRequest = emailVerificationCode.getCredential("registerRequest").getValue(RegisterRequest.class);
 
-        mailService.enterCode(email, code);
+        mailService.enterCode(email, code, EmailVerificationCode.EmailVerificationScope.REGISTRATION);
         User user = userService.create(registerRequest.getEmail(), registerRequest.getUsername(), registerRequest.getPassword(), registerRequest.getFirstName(), registerRequest.getLastName());
 
         UserDetails userDetails = userService.loadUserByUsername(user.getUsername());

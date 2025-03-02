@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import me.artemiyulyanov.uptodate.models.converters.ArticleContentConverter;
 import me.artemiyulyanov.uptodate.repositories.UserRepository;
 import me.artemiyulyanov.uptodate.services.UserService;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,8 +32,10 @@ public class Article {
     @Column(unique = true)
     private String slug;
 
-    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ContentBlock> content;
+    @Builder.Default
+    @Convert(converter = ArticleContentConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private List<ContentBlock> content = new ArrayList<>();
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
@@ -74,6 +77,11 @@ public class Article {
             User wrappedUser = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
             this.permissionScope = definePermissionScopeFor(this, wrappedUser);
         }
+    }
+
+    public void setContent(List<ContentBlock> content) {
+        this.content.clear();
+        this.content.addAll(content);
     }
 
     public List<String> getLikedUsernames() {

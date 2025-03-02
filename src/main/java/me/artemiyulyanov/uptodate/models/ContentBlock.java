@@ -1,29 +1,26 @@
 package me.artemiyulyanov.uptodate.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity
-@Table(name = "articles_content_blocks")
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ContentBlock {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JsonIgnore
-    @JoinColumn(name = "article_id", nullable = false)
-    private Article article;
+    private ContentBlockType type;
 
-    private String type, text;
+    private String text;
 
-    public Long getArticleId() {
-        return article.getId();
+    public enum ContentBlockType {
+        HEADING, TEXT, LIST, IMAGE;
     }
 }

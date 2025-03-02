@@ -27,7 +27,7 @@ public class MailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public EmailVerificationCode sendCode(String email, List<EmailVerificationCode.Credential> credentials) {
+    public EmailVerificationCode sendRegisterConfirmationCode(String email, List<EmailVerificationCode.Credential> credentials) {
         if (isCodeSent(email)) {
             verificationCodes.delete(email);
         }
@@ -36,6 +36,7 @@ public class MailService {
                 .email(email)
                 .code(Integer.toString(generateRandomCode()))
                 .credentials(credentials)
+                .scope(EmailVerificationCode.EmailVerificationScope.REGISTRATION)
                 .build();
         verificationCodes.opsForValue().set(email, verificationCode, VERIFICATION_CODE_EXPIRATION);
 
@@ -48,12 +49,34 @@ public class MailService {
         return verificationCode;
     }
 
+    public EmailVerificationCode sendEmailChangeConfirmationCode(String email, List<EmailVerificationCode.Credential> credentials) {
+        if (isCodeSent(email)) {
+            verificationCodes.delete(email);
+        }
+
+        EmailVerificationCode verificationCode = EmailVerificationCode.builder()
+                .email(email)
+                .code(Integer.toString(generateRandomCode()))
+                .credentials(credentials)
+                .scope(EmailVerificationCode.EmailVerificationScope.REGISTRATION)
+                .build();
+        verificationCodes.opsForValue().set(email, verificationCode, VERIFICATION_CODE_EXPIRATION);
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Verification code");
+        message.setText(String.format("Hi! Your verification code is: %s. Enter it to change your email", verificationCode.getCode()));
+        mailSender.send(message);
+
+        return verificationCode;
+    }
+
     public EmailVerificationCode getVerificationCode(String email) {
         return verificationCodes.opsForValue().get(email);
     }
 
-    public boolean enterCode(String email, String code) {
-        if (validateCode(email, code)) {
+    public boolean enterCode(String email, String code, EmailVerificationCode.EmailVerificationScope scope) {
+        if (validateCode(email, code, scope)) {
             verificationCodes.delete(email);
             return true;
         }
@@ -61,8 +84,8 @@ public class MailService {
         return false;
     }
 
-    public boolean validateCode(String email, String code) {
-        return isCodeSent(email) && Objects.requireNonNull(verificationCodes.opsForValue().get(email)).getCode().equals(code);
+    public boolean validateCode(String email, String code, EmailVerificationCode.EmailVerificationScope scope) {
+        return isCodeSent(email) && Objects.requireNonNull(verificationCodes.opsForValue().get(email)).getCode().equals(code) && Objects.requireNonNull(verificationCodes.opsForValue().get(email)).getScope().equals(scope);
     }
 
     public boolean isCodeSent(String email) {

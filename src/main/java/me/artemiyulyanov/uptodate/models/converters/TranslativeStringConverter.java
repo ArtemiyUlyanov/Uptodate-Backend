@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Converter(autoApply = true)
 @Component
-public class TranslativeStringConvertor implements AttributeConverter<TranslativeString, String> {
+public class TranslativeStringConverter implements AttributeConverter<TranslativeString, String> {
     @Autowired
     private ObjectMapper objectMapper;
 

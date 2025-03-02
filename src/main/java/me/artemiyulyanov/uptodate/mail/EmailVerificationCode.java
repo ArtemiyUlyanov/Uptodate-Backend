@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class EmailVerificationCode {
     private String email, code;
     private List<Credential> credentials;
+    private EmailVerificationScope scope;
 
     public Credential getCredential(String key) {
         return credentials.stream().filter(credential -> credential.getKey().equals(key)).findAny().get();
@@ -37,5 +38,9 @@ public class EmailVerificationCode {
         public <T> T getValue(Class<T> classOfValue) {
             return classOfValue.cast(value);
         }
+    }
+
+    public enum EmailVerificationScope {
+        REGISTRATION, CHANGING;
     }
 }

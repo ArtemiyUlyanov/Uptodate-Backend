@@ -26,9 +26,6 @@ public class UserResourceManager implements ResourceManager<User> {
     @Autowired
     private MinioService minioService;
 
-    @Autowired
-    private UserRepository userRepository;
-
     @Override
     public List<String> uploadResources(User user, List<MultipartFile> files) {
         MultipartFile icon = files.get(0);
@@ -36,9 +33,6 @@ public class UserResourceManager implements ResourceManager<User> {
         if (icon != null) {
             String iconObjectKey = getResourceFolder(user) + File.separator + icon.getOriginalFilename();
             String url = minioService.uploadFile(iconObjectKey, icon);
-
-            user.setIcon(url);
-            userRepository.save(user);
 
             return List.of(url);
         }
@@ -53,7 +47,9 @@ public class UserResourceManager implements ResourceManager<User> {
 
         if (icon != null) {
             String iconObjectKey = getResourceFolder(user) + File.separator + icon.getOriginalFilename();
-            minioService.uploadFile(iconObjectKey, icon);
+            String url = minioService.uploadFile(iconObjectKey, icon);
+
+            return List.of(url);
         }
 
         return Collections.emptyList();

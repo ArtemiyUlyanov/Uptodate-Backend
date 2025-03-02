@@ -3,7 +3,7 @@ package me.artemiyulyanov.uptodate.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import me.artemiyulyanov.uptodate.models.converters.TranslativeStringConvertor;
+import me.artemiyulyanov.uptodate.models.converters.TranslativeStringConverter;
 import me.artemiyulyanov.uptodate.models.text.TranslativeString;
 
 import java.util.HashSet;
@@ -21,10 +21,10 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Convert(converter = TranslativeStringConvertor.class)
+    @Convert(converter = TranslativeStringConverter.class)
     private TranslativeString parent;
 
-    @Convert(converter = TranslativeStringConvertor.class)
+    @Convert(converter = TranslativeStringConverter.class)
     @Column(unique = true)
     private TranslativeString name;
 

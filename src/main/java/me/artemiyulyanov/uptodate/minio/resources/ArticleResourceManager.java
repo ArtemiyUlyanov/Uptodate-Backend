@@ -12,11 +12,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -80,19 +78,25 @@ public class ArticleResourceManager implements ResourceManager<Article> {
         return minioService.getFolder(getResourceFolder(article));
     }
 
-    public List<ContentBlock> uploadContent(Article article, List<MultipartFile> resources) {
+    public List<ContentBlock> uploadContent(Article article, List<ContentBlock> contentBlocks, List<MultipartFile> resources) {
         AtomicInteger index = new AtomicInteger(0);
 
         List<String> resourcesUrls = uploadResources(article, resources);
-        List<ContentBlock> updatedContentBlocks = article.getContent().stream()
-                .filter(contentBlock -> contentBlock.getType().equals("image") && contentBlock.getText().startsWith("file-"))
-                .peek(contentBlock -> contentBlock.setText(resourcesUrls.get(index.getAndIncrement())))
-                .toList();
 
-        return updatedContentBlocks;
+        return contentBlocks.stream()
+                .map(contentBlock -> {
+                    if (contentBlock.getType() == ContentBlock.ContentBlockType.IMAGE && contentBlock.getText().equals("expected-file")) {
+                        contentBlock.setText(resourcesUrls.get(index.getAndIncrement()));
+                        return contentBlock;
+                    } else {
+                        return contentBlock;
+                    }
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public String uploadCover(Article article, MultipartFile cover) {
+        if (cover == null) return article.getCover();
         return uploadResources(article, List.of(cover)).stream().findFirst().orElse(null);
     }
 }

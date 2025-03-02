@@ -2,14 +2,17 @@ package me.artemiyulyanov.uptodate.services;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
+import me.artemiyulyanov.uptodate.controllers.api.account.responses.ChangesAvailableResponse;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.minio.resources.UserResourceManager;
 import me.artemiyulyanov.uptodate.models.Role;
 import me.artemiyulyanov.uptodate.models.User;
+import me.artemiyulyanov.uptodate.models.UserSettings;
 import me.artemiyulyanov.uptodate.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -106,18 +106,58 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         return userRepository.save(user);
     }
 
-    public User edit(Long id, String username, String firstName, String lastName, MultipartFile icon) {
+    public User edit(Long id, String username, String firstName, String lastName, UserSettings settings) {
         User newUser = userRepository.findById(id).get();
 
         newUser.setUsername(username);
         newUser.setFirstName(firstName);
         newUser.setLastName(lastName);
 
-        String iconObjectKey = getResourceManager().getResourceFolder(newUser) + File.separator + icon.getOriginalFilename();
-        getResourceManager().updateResources(newUser, List.of(icon));
+        settings.setUser(newUser);
+        newUser.setSettings(settings);
 
-        newUser.setIcon(iconObjectKey);
+//        String iconObjectKey = getResourceManager().getResourceFolder(newUser) + File.separator + icon.getOriginalFilename();
+//        getResourceManager().updateResources(newUser, List.of(icon));
+//
+//        newUser.setIcon(iconObjectKey);
         return userRepository.save(newUser);
+    }
+
+    public User uploadIcon(Long id, MultipartFile icon) {
+        User newUser = userRepository.findById(id).get();
+
+        Optional<String> url = getResourceManager().updateResources(newUser, List.of(icon))
+                        .stream()
+                        .findFirst();
+
+        newUser.setIcon(url.orElse(null));
+        return userRepository.save(newUser);
+    }
+
+    public User deleteIcon(Long id) {
+        User newUser = userRepository.findById(id).get();
+
+        getResourceManager().deleteResources(newUser);
+        newUser.setIcon(null);
+
+        return userRepository.save(newUser);
+    }
+
+    public List<ChangesAvailableResponse.ConflictedColumn> getConflictedColumnsWhileEditing(User user, String email, String username) {
+        User userByEmail = userRepository.findByEmail(email).orElse(null);
+        User userByUsername = userRepository.findByUsername(username).orElse(null);
+
+        List<ChangesAvailableResponse.ConflictedColumn> conflictedColumns = new ArrayList<>();
+
+        if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
+            conflictedColumns.add(ChangesAvailableResponse.ConflictedColumn.EMAIL);
+        }
+
+        if (userByUsername != null && !userByUsername.getId().equals(user.getId())) {
+            conflictedColumns.add(ChangesAvailableResponse.ConflictedColumn.USERNAME);
+        }
+
+        return conflictedColumns;
     }
 
     public void save(User user) {
@@ -145,7 +185,6 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
     public UserResourceManager getResourceManager() {
         return UserResourceManager
                 .builder()
-                .userRepository(userRepository)
                 .minioService(minioService)
                 .build();
     }

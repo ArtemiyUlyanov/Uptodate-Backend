@@ -18,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -85,27 +84,24 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
                     .map(Optional::get)
                     .collect(Collectors.toSet());
 
-            List<ContentBlock> contentBlocks = objectMapper.readValue(content, objectMapper.getTypeFactory().constructCollectionType(List.class, ContentBlock.class));
-
             Article article = Article.builder()
                     .heading(heading)
                     .description(description)
-                    .content(contentBlocks)
                     .categories(categories)
                     .slug(slugify.slugify(heading))
                     .createdAt(LocalDateTime.now())
                     .author(author)
                     .build();
 
-            article = articleRepository.save(article);
+            Article initiallySavedArticle = articleRepository.save(article);
 
-            List<ContentBlock> updatedContentBlocks = getResourceManager().uploadContent(article, resources);
-            String updatedCover = getResourceManager().uploadCover(article, cover);
+            List<ContentBlock> updatedContentBlocks = getResourceManager().uploadContent(initiallySavedArticle, objectMapper.readValue(content, objectMapper.getTypeFactory().constructCollectionType(ArrayList.class, ContentBlock.class)), resources);
+            String updatedCover = getResourceManager().uploadCover(initiallySavedArticle, cover);
 
-            article.setContent(updatedContentBlocks);
-            article.setCover(updatedCover);
+            initiallySavedArticle.setContent(updatedContentBlocks);
+            initiallySavedArticle.setCover(updatedCover);
 
-            return articleRepository.save(article);
+            return articleRepository.save(initiallySavedArticle);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -121,13 +117,13 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
                     .map(Optional::get)
                     .collect(Collectors.toSet());
 
-            List<ContentBlock> contentBlocks = objectMapper.readValue(content, objectMapper.getTypeFactory().constructCollectionType(List.class, ContentBlock.class));
+            List<ContentBlock> newContentBlocks = objectMapper.readValue(content, objectMapper.getTypeFactory().constructCollectionType(List.class, ContentBlock.class));
 
             newArticle.setHeading(heading);
             newArticle.setDescription(description);
             newArticle.setCategories(categories);
             newArticle.setSlug(slugify.slugify(heading));
-            newArticle.setContent(getResourceManager().uploadContent(newArticle, resources));
+            newArticle.setContent(getResourceManager().uploadContent(newArticle, newContentBlocks, resources));
             newArticle.setCover(getResourceManager().uploadCover(newArticle, cover));
 
             return articleRepository.save(newArticle);

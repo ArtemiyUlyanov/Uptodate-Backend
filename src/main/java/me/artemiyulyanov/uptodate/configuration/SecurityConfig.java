@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/id/**", "/api/articles/slug/**", "/api/articles/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/comments", "/api/comments/{id}", "/api/comments/author/{id}", "/api/comments/article/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/utils/**").permitAll()
                         .requestMatchers("/api/categories").permitAll()
                         .requestMatchers("/api/auth/**").anonymous()
                         .requestMatchers("/api/auth/refresh").authenticated()

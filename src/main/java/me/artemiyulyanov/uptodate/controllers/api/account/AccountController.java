@@ -1,6 +1,7 @@
 package me.artemiyulyanov.uptodate.controllers.api.account;
 
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
+import me.artemiyulyanov.uptodate.controllers.api.account.responses.ChangesAvailableResponse;
 import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.models.UserSettings;
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +53,23 @@ public class AccountController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The user information has been retrieved successfully!", wrappedUser.get());
     }
 
+    @GetMapping("/changes-available")
+    public ResponseEntity<?> checkChangesAvailable(
+            @RequestParam String username,
+            @RequestParam String email
+    ) {
+        Optional<User> wrappedUser = getAuthorizedUser();
+        List<ChangesAvailableResponse.ConflictedColumn> conflictedColumns = userService.getConflictedColumnsWhileEditing(wrappedUser.get(), email, username);
+
+        return requestService.executeCustomResponse(
+                ChangesAvailableResponse.builder()
+                        .changesAvailable(conflictedColumns.isEmpty())
+                        .conflictedColumns(conflictedColumns)
+                        .status(200)
+                        .build()
+        );
+    }
+
     @GetMapping("/statistics")
     public ResponseEntity<?> getStatistics() {
         Optional<User> wrappedUser = getAuthorizedUser();
@@ -59,48 +78,23 @@ public class AccountController extends AuthenticatedController {
 
     @PutMapping
     public ResponseEntity<?> editAccount(
-            @RequestParam String username,
             @RequestParam String firstName,
             @RequestParam String lastName,
-            @RequestParam(value = "icon", required = false) MultipartFile icon) {
+            @RequestParam String username,
+            @RequestBody UserSettings settings) {
         User user = getAuthorizedUser().get();
 
-        if (!username.equals(user.getUsername()) && userService.existsByUsername(username)) {
+        if (!userService.getConflictedColumnsWhileEditing(user, user.getEmail(), username).isEmpty()) {
             return requestService.executeApiResponse(HttpStatus.CONFLICT, "The username is already taken!");
         }
 
-        User updatedUser = userService.edit(user.getId(), username, firstName, lastName, icon);
+        User updatedUser = userService.edit(user.getId(), username, firstName, lastName, settings);
         return requestService.executeEntityResponse(HttpStatus.OK, "The changes have been applied successfully!", updatedUser);
-    }
-
-    @PutMapping("/icon")
-    public ResponseEntity<?> uploadIcon(@RequestParam(value = "icon") MultipartFile icon) {
-        User user = getAuthorizedUser().get();
-
-        String iconObjectKey = userService.getResourceManager().getResourceFolder(user) + File.separator + icon.getOriginalFilename();
-        userService.getResourceManager().updateResources(user, List.of(icon));
-
-        user.setIcon(iconObjectKey);
-        userService.save(user);
-
-        return requestService.executeApiResponse(HttpStatus.OK, "The icon has been updated successfully!");
     }
 
     @GetMapping("/settings")
     public ResponseEntity<?> getSettings() {
         User user = getAuthorizedUser().get();
         return requestService.executeEntityResponse(HttpStatus.OK, "The settings have been retrieved successfully!", user.getSettings());
-    }
-
-    @PutMapping("/settings")
-    public ResponseEntity<?> editSettings(@RequestBody UserSettings settings) {
-        User user = getAuthorizedUser().get();
-
-        if (settings.getId().equals(user.getId())) {
-            return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "You are unable of editing these settings!");
-        }
-
-        userSettingsRepository.save(settings);
-        return requestService.executeApiResponse(HttpStatus.OK, "The changes have been applied successfully!");
     }
 }

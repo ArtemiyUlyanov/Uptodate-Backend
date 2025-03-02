@@ -22,10 +22,10 @@ public class User {
     private Long id;
 
     @Column(unique = true)
-    private String username;
+    private String username, email;
 
     @JsonIgnore
-    private String email, password;
+    private String password;
 
     private String firstName, lastName, icon;
 
