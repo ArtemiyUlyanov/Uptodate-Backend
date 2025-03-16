@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -76,6 +77,7 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         return articleRepository.findByAuthor(author);
     }
 
+    @Transactional
     public Article create(User author, String heading, String description, String content, List<String> categoriesNames, MultipartFile cover, List<MultipartFile> resources) {
         try {
             Set<Category> categories = categoriesNames.stream()
@@ -108,6 +110,7 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         }
     }
 
+    @Transactional
     public Article edit(Long id, String heading, String description, String content, List<String> categoriesNames, MultipartFile cover, List<MultipartFile> resources) {
         try {
             Article newArticle = articleRepository.findById(id).get();
@@ -133,15 +136,23 @@ public class ArticleService implements ResourceService<ArticleResourceManager> {
         }
     }
 
+    @Transactional
     public void deleteById(Long id) {
         articleRepository.deleteById(id);
     }
 
+    @Transactional
     public void delete(Article article) {
         getResourceManager().deleteResources(article);
         articleRepository.delete(article);
     }
 
+    @Transactional
+    public void deleteAll(List<Article> articles) {
+        articleRepository.deleteAll(articles);
+    }
+
+    @Transactional
     public Article save(Article article) {
         return articleRepository.save(article);
     }

@@ -5,6 +5,7 @@ import me.artemiyulyanov.uptodate.repositories.CommentLikeRepository;
 import me.artemiyulyanov.uptodate.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class CommentLikeService {
     @Autowired
     private CommentService commentService;
 
+    @Transactional
     public Comment like(Comment comment, User user) {
         List<CommentLike> likes = comment.getLikes();
         boolean alreadyLiked = likes.stream().anyMatch(like -> like.getUser().getId().equals(user.getId()));

@@ -1,10 +1,10 @@
 package me.artemiyulyanov.uptodate.services;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.transaction.Transactional;
 import me.artemiyulyanov.uptodate.controllers.api.account.responses.ChangesAvailableResponse;
 import me.artemiyulyanov.uptodate.minio.MinioService;
 import me.artemiyulyanov.uptodate.minio.resources.UserResourceManager;
+import me.artemiyulyanov.uptodate.models.Article;
 import me.artemiyulyanov.uptodate.models.Role;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.models.UserSettings;
@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -28,13 +29,15 @@ import java.util.stream.Collectors;
 
 @Service
 @Primary
-@Transactional
 public class UserService implements UserDetailsService, ResourceService<UserResourceManager> {
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private RoleService roleService;
+
+    @Autowired
+    private ArticleService articleService;
 
     @Autowired
     private MinioService minioService;
@@ -53,7 +56,7 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
                 .firstName("Artemiy")
                 .lastName("Ulyanov")
                 .password(passwordEncoder.encode("HelloBro31"))
-                .roles(Set.of(roleService.findRoleByName("USER"), roleService.findRoleByName("ADMIN")))
+                .roles(Set.of(roleService.findRoleByName("USER").orElse(null), roleService.findRoleByName("ADMIN").orElse(null)))
                 .build();
 
         userRepository.save(testUser);
@@ -91,21 +94,23 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         return userRepository.findAllById(ids);
     }
 
+    @Transactional
     public User create(String email, String username, String password, String firstName, String lastName) {
         User user = User.builder()
                 .email(email)
                 .username(username)
-                .password(password)
+                .password(passwordEncoder.encode(password))
                 .firstName(firstName)
                 .lastName(lastName)
                 .build();
 
-        Role basicRole = roleService.findRoleByName("USER");
+        Role basicRole = roleService.findRoleByName("USER").orElse(null);
         user.setRoles(Set.of(basicRole));
 
         return userRepository.save(user);
     }
 
+    @Transactional
     public User edit(Long id, String username, String firstName, String lastName, UserSettings settings) {
         User newUser = userRepository.findById(id).get();
 
@@ -123,6 +128,14 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         return userRepository.save(newUser);
     }
 
+    @Transactional
+    public void delete(User user) {
+        List<Article> articles = user.getArticles();
+        articleService.deleteAll(articles);
+        userRepository.delete(user);
+    }
+
+    @Transactional
     public User uploadIcon(Long id, MultipartFile icon) {
         User newUser = userRepository.findById(id).get();
 
@@ -134,6 +147,7 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         return userRepository.save(newUser);
     }
 
+    @Transactional
     public User deleteIcon(Long id) {
         User newUser = userRepository.findById(id).get();
 
@@ -141,6 +155,18 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         newUser.setIcon(null);
 
         return userRepository.save(newUser);
+    }
+
+    @Transactional
+    public User updatePassword(User user, String password) {
+        user.setPassword(passwordEncoder.encode(password));
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User updateEmail(User user, String email) {
+        user.setEmail(email);
+        return userRepository.save(user);
     }
 
     public List<ChangesAvailableResponse.ConflictedColumn> getConflictedColumnsWhileEditing(User user, String email, String username) {
@@ -160,6 +186,7 @@ public class UserService implements UserDetailsService, ResourceService<UserReso
         return conflictedColumns;
     }
 
+    @Transactional
     public void save(User user) {
         userRepository.save(user);
     }

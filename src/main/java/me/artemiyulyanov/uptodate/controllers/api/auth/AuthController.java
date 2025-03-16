@@ -1,32 +1,27 @@
 package me.artemiyulyanov.uptodate.controllers.api.auth;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
 import me.artemiyulyanov.uptodate.controllers.api.auth.requests.LoginRequest;
 import me.artemiyulyanov.uptodate.controllers.api.auth.requests.RegisterRequest;
 import me.artemiyulyanov.uptodate.controllers.api.auth.requests.VerifyCodeRequest;
 import me.artemiyulyanov.uptodate.controllers.api.auth.responses.TokenResponse;
 import me.artemiyulyanov.uptodate.jwt.JWTUtil;
-import me.artemiyulyanov.uptodate.mail.EmailVerificationCode;
+import me.artemiyulyanov.uptodate.mail.MailConfirmationCode;
 import me.artemiyulyanov.uptodate.mail.MailService;
+import me.artemiyulyanov.uptodate.mail.senders.MailSenderFactory;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.web.RequestService;
-import me.artemiyulyanov.uptodate.web.ServerResponse;
 import me.artemiyulyanov.uptodate.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -49,6 +44,9 @@ public class AuthController extends AuthenticatedController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private MailSenderFactory mailSenderFactory;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
@@ -86,14 +84,15 @@ public class AuthController extends AuthenticatedController {
             return requestService.executeApiResponse(HttpStatus.CONFLICT, "User already exists!");
         }
 
-        registerRequest.setPassword(passwordEncoder.encode(password));
-        EmailVerificationCode emailVerificationCode = mailService.sendRegisterConfirmationCode(email, List.of(
-                EmailVerificationCode.Credential
-                        .builder()
-                        .key("registerRequest")
-                        .value(registerRequest)
-                        .build()
-        ));
+        registerRequest.setPassword(password);
+        MailConfirmationCode mailConfirmationCode = mailSenderFactory.createSender(MailConfirmationCode.MailScope.REGISTRATION)
+                .send(email, List.of(
+                        MailConfirmationCode.Credential
+                                .builder()
+                                .key("registerRequest")
+                                .value(registerRequest)
+                                .build()
+                ));
 
         return requestService.executeApiResponse(HttpStatus.OK, "The request has been proceeded successfully!");
     }
@@ -103,14 +102,14 @@ public class AuthController extends AuthenticatedController {
         String email = verifyCodeRequest.getEmail();
         String code = verifyCodeRequest.getCode();
 
-        if (!mailService.validateCode(email, code, EmailVerificationCode.EmailVerificationScope.REGISTRATION)) {
+        if (!mailService.validateCode(email, code, MailConfirmationCode.MailScope.REGISTRATION)) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The code is invalid!");
         }
 
-        EmailVerificationCode emailVerificationCode = mailService.getVerificationCode(email);
-        RegisterRequest registerRequest = emailVerificationCode.getCredential("registerRequest").getValue(RegisterRequest.class);
+        MailConfirmationCode mailConfirmationCode = mailService.getConfirmationCode(email);
+        RegisterRequest registerRequest = mailConfirmationCode.getCredential("registerRequest").getValue(RegisterRequest.class);
 
-        mailService.enterCode(email, code, EmailVerificationCode.EmailVerificationScope.REGISTRATION);
+        mailService.enterCode(email, code, MailConfirmationCode.MailScope.REGISTRATION);
         User user = userService.create(registerRequest.getEmail(), registerRequest.getUsername(), registerRequest.getPassword(), registerRequest.getFirstName(), registerRequest.getLastName());
 
         UserDetails userDetails = userService.loadUserByUsername(user.getUsername());

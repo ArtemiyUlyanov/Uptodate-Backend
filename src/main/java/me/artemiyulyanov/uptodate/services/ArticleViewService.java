@@ -8,6 +8,7 @@ import me.artemiyulyanov.uptodate.repositories.ArticleViewRepository;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -23,6 +24,7 @@ public class ArticleViewService {
     @Autowired
     private ArticleViewRepository articleViewRepository;
 
+    @Transactional
     public void view(Article article, User user) {
         HttpServletRequest request = requestFactory.getObject();
         String ipAddress = request.getRemoteAddr();
@@ -43,6 +45,7 @@ public class ArticleViewService {
         articleViewRepository.save(view);
     }
 
+    @Transactional(readOnly = true)
     public List<ArticleView> findLastViewsOfAuthor(User user, LocalDateTime after) {
         return articleViewRepository.findLastViewsOfAuthor(user, after);
     }

@@ -48,7 +48,7 @@ public class AccountController extends AuthenticatedController {
     private UserSettingsRepository userSettingsRepository;
 
     @GetMapping
-    public ResponseEntity<?> getInfo() {
+    public ResponseEntity<?> me() {
         Optional<User> wrappedUser = getAuthorizedUser();
         return requestService.executeEntityResponse(HttpStatus.OK, "The user information has been retrieved successfully!", wrappedUser.get());
     }
@@ -71,7 +71,7 @@ public class AccountController extends AuthenticatedController {
     }
 
     @GetMapping("/statistics")
-    public ResponseEntity<?> getStatistics() {
+    public ResponseEntity<?> statistics() {
         Optional<User> wrappedUser = getAuthorizedUser();
         return requestService.executeEntityResponse(HttpStatus.OK, "The statistics has been retrieved successfully!", wrappedUser.get().getStatistics());
     }
@@ -92,8 +92,16 @@ public class AccountController extends AuthenticatedController {
         return requestService.executeEntityResponse(HttpStatus.OK, "The changes have been applied successfully!", updatedUser);
     }
 
+    @DeleteMapping
+    public ResponseEntity<?> deleteAccount() {
+        User user = getAuthorizedUser().get();
+        userService.delete(user);
+
+        return requestService.executeApiResponse(HttpStatus.OK, "The user has been deleted successfully!");
+    }
+
     @GetMapping("/settings")
-    public ResponseEntity<?> getSettings() {
+    public ResponseEntity<?> settings() {
         User user = getAuthorizedUser().get();
         return requestService.executeEntityResponse(HttpStatus.OK, "The settings have been retrieved successfully!", user.getSettings());
     }

@@ -10,6 +10,7 @@ import me.artemiyulyanov.uptodate.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -50,6 +51,7 @@ public class CommentService implements ResourceService<CommentResourceManager> {
         return commentRepository.findByAuthor(author);
     }
 
+    @Transactional
     public Comment create(String content, User author, Article article, List<MultipartFile> resources) {
         Comment comment = Comment.builder()
                 .content(content)
@@ -65,6 +67,7 @@ public class CommentService implements ResourceService<CommentResourceManager> {
         return commentRepository.save(comment);
     }
 
+    @Transactional
     public Comment edit(Long id, String content, List<MultipartFile> resources) {
         Comment newComment = commentRepository.findById(id).get();
 
@@ -75,11 +78,13 @@ public class CommentService implements ResourceService<CommentResourceManager> {
         return commentRepository.save(newComment);
     }
 
+    @Transactional
     public void delete(Comment comment) {
         getResourceManager().deleteResources(comment);
         commentRepository.delete(comment);
     }
 
+    @Transactional
     public Comment save(Comment comment) {
         return commentRepository.save(comment);
     }
@@ -92,20 +97,4 @@ public class CommentService implements ResourceService<CommentResourceManager> {
                 .minioService(minioService)
                 .build();
     }
-
-//    public void loadResources(ArticleComment comment, List<MultipartFile> resources) {
-//        if (resources != null) {
-//            minioService.deleteArticleCommentResources(comment);
-//            minioService.saveArticleCommentResources(comment, resources);
-//        }
-//    }
-//
-//    @Deprecated
-//    public void update(ArticleComment comment, List<MultipartFile> resources) {
-//        if (resources != null) {
-//            minioService.saveArticleCommentResources(comment, resources);
-//        }
-//
-//        articleCommentRepository.save(comment);
-//    }
 }

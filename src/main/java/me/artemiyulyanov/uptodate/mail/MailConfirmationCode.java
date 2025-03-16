@@ -1,23 +1,18 @@
 package me.artemiyulyanov.uptodate.mail;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class EmailVerificationCode {
+public class MailConfirmationCode {
     private String email, code;
     private List<Credential> credentials;
-    private EmailVerificationScope scope;
+    private MailScope scope;
 
     public Credential getCredential(String key) {
         return credentials.stream().filter(credential -> credential.getKey().equals(key)).findAny().get();
@@ -40,7 +35,7 @@ public class EmailVerificationCode {
         }
     }
 
-    public enum EmailVerificationScope {
-        REGISTRATION, CHANGING;
+    public enum MailScope {
+        REGISTRATION, EMAIL_CHANGE, PASSWORD_CHANGE;
     }
 }

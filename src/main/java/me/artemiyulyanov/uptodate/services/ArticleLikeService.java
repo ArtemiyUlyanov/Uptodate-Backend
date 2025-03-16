@@ -5,6 +5,7 @@ import me.artemiyulyanov.uptodate.models.*;
 import me.artemiyulyanov.uptodate.repositories.ArticleLikeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ public class ArticleLikeService {
     @Autowired
     private ArticleService articleService;
 
+    @Transactional
     public Article like(Article article, User user) {
         List<ArticleLike> likes = article.getLikes();
         boolean alreadyLiked = likes.stream().anyMatch(like -> like.getUser().getId().equals(user.getId()));
@@ -42,6 +44,7 @@ public class ArticleLikeService {
         return articleService.save(article);
     }
 
+    @Transactional(readOnly = true)
     public List<ArticleLike> findLastLikesOfAuthor(User user, LocalDateTime after) {
         return articleLikeRepository.findLastLikesOfAuthor(user, after);
     }

@@ -12,10 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Builder
 @Getter
 @Setter
-@AllArgsConstructor
 public class UserStatistics {
     @Getter
     @Setter
@@ -30,15 +28,17 @@ public class UserStatistics {
     @JsonIgnore
     private User user;
 
+    private List<ArticleView> lastViews;
+    private List<ArticleLike> lastLikes;
+
+    @Builder
+    public UserStatistics(User user) {
+        this.user = user;
+        this.lastViews = articleViewService.findLastViewsOfAuthor(user, LocalDateTime.now().minusDays(1));
+        this.lastLikes = articleLikeService.findLastLikesOfAuthor(user, LocalDateTime.now().minusDays(1));
+    }
+
     public Long getUserId() {
         return user.getId();
-    }
-
-    public List<ArticleView> getLastViews() {
-        return articleViewService.findLastViewsOfAuthor(user, LocalDateTime.now().minusDays(1));
-    }
-
-    public List<ArticleLike> getLastLikes() {
-        return articleLikeService.findLastLikesOfAuthor(user, LocalDateTime.now().minusDays(1));
     }
 }

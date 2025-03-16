@@ -1,9 +1,9 @@
 package me.artemiyulyanov.uptodate.controllers.api.account;
 
 import me.artemiyulyanov.uptodate.controllers.AuthenticatedController;
-import me.artemiyulyanov.uptodate.controllers.api.auth.requests.RegisterRequest;
-import me.artemiyulyanov.uptodate.mail.EmailVerificationCode;
+import me.artemiyulyanov.uptodate.mail.MailConfirmationCode;
 import me.artemiyulyanov.uptodate.mail.MailService;
+import me.artemiyulyanov.uptodate.mail.senders.MailSenderFactory;
 import me.artemiyulyanov.uptodate.models.User;
 import me.artemiyulyanov.uptodate.services.UserService;
 import me.artemiyulyanov.uptodate.web.RequestService;
@@ -26,21 +26,25 @@ public class AccountEmailController extends AuthenticatedController {
     @Autowired
     private RequestService requestService;
 
+    @Autowired
+    private MailSenderFactory mailSenderFactory;
+
     @PatchMapping
     public ResponseEntity<?> editEmail(@RequestParam String email) {
         User user = getAuthorizedUser().get();
 
-        if (!userService.getConflictedColumnsWhileEditing(user, email, user.getUsername()).isEmpty() || mailService.isCodeSent(email)) {
+        if (!userService.getConflictedColumnsWhileEditing(user, email, user.getUsername()).isEmpty()) {
             return requestService.executeApiResponse(HttpStatus.CONFLICT, "The email is already taken!");
         }
 
-        EmailVerificationCode emailVerificationCode = mailService.sendEmailChangeConfirmationCode(email, List.of(
-                EmailVerificationCode.Credential
-                        .builder()
-                        .key("user")
-                        .value(user)
-                        .build()
-        ));
+        MailConfirmationCode mailConfirmationCode = mailSenderFactory.createSender(MailConfirmationCode.MailScope.EMAIL_CHANGE)
+                .send(email, List.of(
+                        MailConfirmationCode.Credential
+                                .builder()
+                                .key("userId")
+                                .value(user.getId())
+                                .build()
+                ));
         return requestService.executeApiResponse(HttpStatus.OK, "The code has been sent to your email address!");
     }
 
@@ -50,22 +54,20 @@ public class AccountEmailController extends AuthenticatedController {
             @RequestParam String code) {
         User user = getAuthorizedUser().get();
 
-        if (!mailService.validateCode(email, code, EmailVerificationCode.EmailVerificationScope.CHANGING)) {
+        if (!mailService.validateCode(email, code, MailConfirmationCode.MailScope.EMAIL_CHANGE)) {
             return requestService.executeApiResponse(HttpStatus.BAD_REQUEST, "The code is invalid!");
         }
 
-        EmailVerificationCode emailVerificationCode = mailService.getVerificationCode(email);
-        User userToChangeEmail = emailVerificationCode.getCredential("user").getValue(User.class);
+        MailConfirmationCode mailConfirmationCode = mailService.getConfirmationCode(email);
+        Long userToChangeEmailId = mailConfirmationCode.getCredential("userId").getValue(Long.class);
 
-        if (!userToChangeEmail.getId().equals(user.getId())) {
+        if (!userToChangeEmailId.equals(user.getId())) {
             return requestService.executeApiResponse(HttpStatus.FORBIDDEN, "You are not allowed to confirm this email!");
         }
 
-        mailService.enterCode(email, code, EmailVerificationCode.EmailVerificationScope.CHANGING);
+        mailService.enterCode(email, code, MailConfirmationCode.MailScope.EMAIL_CHANGE);
 
-        user.setEmail(email);
-        userService.save(user);
-
-        return requestService.executeEntityResponse(HttpStatus.OK, "The email has been updated successfully!", user);
+        User updatedUser = userService.updateEmail(user, email);
+        return requestService.executeEntityResponse(HttpStatus.OK, "The email has been updated successfully!", updatedUser);
     }
 }

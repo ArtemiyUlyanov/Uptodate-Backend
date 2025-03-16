@@ -7,6 +7,8 @@ import me.artemiyulyanov.uptodate.repositories.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @Transactional
 public class RoleService {
@@ -28,7 +30,7 @@ public class RoleService {
         roleRepository.save(roleAdmin);
     }
 
-    public Role findRoleByName(String name) {
-        return roleRepository.findByName(name).orElse(null);
+    public Optional<Role> findRoleByName(String name) {
+        return roleRepository.findByName(name);
     }
 }
